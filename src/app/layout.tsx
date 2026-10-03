@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     images: ["/images/og-image.jpg"],
   },
   robots: { index: true, follow: true },
-  icons: { icon: "/favicon.ico" },
+  // Iconos: Next.js usa automáticamente src/app/favicon.ico, icon.png y apple-icon.png
 };
 
 export const viewport: Viewport = {
