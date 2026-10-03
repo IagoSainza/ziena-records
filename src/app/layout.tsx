@@ -19,7 +19,9 @@ const spaceGrotesk = Space_Grotesk({
 // URL pública del sitio. Defínela en .env.local / Vercel: NEXT_PUBLIC_SITE_URL
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-const fullTitle = `${site.name} | ${site.tagline} en ${site.address.city}`;
+const fullTitle = "Ziena Records | Estudio de Ensayo y Grabación en Ourense";
+const description =
+  "Estudio de ensayo y grabación en Ourense (Av. Portugal, 133, sótano). Equipamiento profesional y reserva directa por WhatsApp.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -27,7 +29,7 @@ export const metadata: Metadata = {
     default: fullTitle,
     template: `%s | ${site.name}`,
   },
-  description: site.description,
+  description,
   keywords: [
     "sala de ensayo",
     "alquiler sala de ensayo",
@@ -47,7 +49,7 @@ export const metadata: Metadata = {
     url: "/",
     siteName: site.name,
     title: fullTitle,
-    description: site.description,
+    description,
     images: [
       {
         url: "/images/og-image.jpg",
@@ -60,7 +62,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: fullTitle,
-    description: site.description,
+    description,
     images: ["/images/og-image.jpg"],
   },
   robots: { index: true, follow: true },
@@ -79,10 +81,10 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   name: site.name,
-  description: site.description,
+  description,
   url: siteUrl,
   telephone: `+${site.whatsappNumber}`,
-  email: site.email,
+  ...(site.email ? { email: site.email } : {}),
   image: `${siteUrl}/images/og-image.jpg`,
   address: {
     "@type": "PostalAddress",

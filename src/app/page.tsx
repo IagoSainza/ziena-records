@@ -1,102 +1,178 @@
 "use client";
 
 /**
- * page.tsx STANDALONE
- * Todo el Bloque 1 + Bloque 2 en un solo archivo, sin imports de
- * carpetas externas (@/components, @/lib, @/data).
+ * page.tsx STANDALONE · Ziena Records
+ * Todo en un solo archivo, sin imports de carpetas externas
+ * (@/components, @/lib, @/data). Solo React + clases de Tailwind
+ * con valores directos (sin colores personalizados del tema).
  *
- * Solo depende de React y de las clases de Tailwind (v3 o v4):
- * no usa colores ni utilidades personalizadas del tema, todo va con
- * valores directos (#0a0a0b, #25D366, amber-*) y estilos en línea.
+ * Paleta (basada en el logo):
+ *   Fondo     #09090b
+ *   Morado    #a855f7 / #8b5cf6
+ *   Verde     #22c55e / #10b981
+ *   WhatsApp  #25D366
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 /* ==========================================================================
-   1. DATOS DEL LOCAL (datos de EJEMPLO: sustitúyelos por los reales)
+   1. DATOS DEL ESTUDIO (revisa teléfono, tarifas y equipo)
    ========================================================================== */
 
 const site = {
-  name: "Overdrive Studio",
-  shortName: "Overdrive",
-  tagline: "Salas de ensayo y estudio de grabación",
+  name: "Ziena Records",
 
   // Número internacional SIN "+" ni espacios (34 = España)
-  whatsappNumber: "34600123456",
-  phoneDisplay: "600 123 456",
-  email: "hola@overdrivestudio.es",
+  whatsappNumber: "34679475522",
+  phoneDisplay: "679 47 55 22",
 
   address: {
-    street: "Calle de la Música, 12 (nave 3)",
-    postalCode: "28000",
-    city: "Madrid",
+    street: "Av. Portugal, 133, sótano",
+    postalCode: "32002",
+    city: "Ourense",
   },
 
   hours: [
     { days: "Lunes a viernes", time: "10:00 – 23:00" },
-    { days: "Sábados", time: "11:00 – 23:00" },
-    { days: "Domingos", time: "12:00 – 21:00" },
+    { days: "Sábados y domingos", time: "Con cita previa" },
   ],
 
-  nav: [
-    { label: "Salas", href: "#salas" },
-    { label: "Tarifas", href: "#tarifas" },
-    { label: "Estudio", href: "#estudio" },
-    { label: "Equipo", href: "#equipo" },
-    { label: "Contacto", href: "#contacto" },
-  ],
-
-  trustPoints: [
-    { value: "3", label: "Salas insonorizadas" },
-    { value: "Backline", label: "Incluido en cada sala" },
-    { value: "7 días", label: "Abierto toda la semana" },
-    { value: "< 1 h", label: "Respuesta por WhatsApp" },
-  ],
-
-  legal: {
-    companyName: "Overdrive Studio S.L.",
-    taxId: "B-12345678",
-    registeredAddress: "Calle de la Música, 12 (nave 3), 28000 Madrid",
-    email: "legal@overdrivestudio.es",
-    notice:
-      "En cumplimiento de la Ley 34/2002 (LSSI-CE), este sitio web es titular de Overdrive Studio S.L., con NIF B-12345678 y domicilio en Calle de la Música, 12 (nave 3), 28000 Madrid.",
+  room: {
+    name: "Sala Principal",
+    description:
+      "Sala insonorizada y acondicionada acústicamente, preparada para ensayar con banda completa o grabar tu próxima maqueta sin salir de la sala.",
+    specs: [
+      { label: "Superficie", value: "25 m²" },
+      { label: "Capacidad", value: "Hasta 6 músicos" },
+      { label: "Climatización", value: "Sí" },
+    ],
+    equipment: [
+      "Batería completa con platos",
+      "Amplificadores de guitarra y bajo",
+      "Equipo de voces con PA",
+      "Micrófonos de estudio",
+      "Mesa de mezclas digital",
+      "Grabación multipista",
+    ],
   },
-};
+
+  rates: [
+    {
+      name: "Ensayo",
+      price: "10 €",
+      unit: "/ hora",
+      detail: "Backline incluido. Mínimo 2 horas.",
+      featured: false,
+    },
+    {
+      name: "Grabación",
+      price: "25 €",
+      unit: "/ hora",
+      detail: "Técnico de sonido incluido. Grabación multipista.",
+      featured: true,
+    },
+    {
+      name: "Cuota mensual",
+      price: "Consultar",
+      unit: "",
+      detail: "Horario fijo semanal para tu banda.",
+      featured: false,
+    },
+  ],
+} as const;
+
+const fullAddress = `${site.address.street}, ${site.address.postalCode} ${site.address.city}`;
+const mapsQuery = encodeURIComponent(`Ziena Records, ${fullAddress}`);
+const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+const mapsEmbedUrl = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
 
 /* ==========================================================================
-   2. HELPERS DE WHATSAPP
+   2. COLORES Y HELPERS DE WHATSAPP
    ========================================================================== */
 
-function getWhatsAppLink(message?: string, phone: string = site.whatsappNumber) {
-  const cleanPhone = phone.replace(/\D/g, "");
-  const base = `https://wa.me/${cleanPhone}`;
+const COLORS = {
+  ink: "#09090b",
+  purple: "#a855f7",
+  violet: "#8b5cf6",
+  green: "#22c55e",
+  emerald: "#10b981",
+  whatsapp: "#25D366",
+};
+
+function getWhatsAppLink(message?: string) {
+  const base = `https://wa.me/${site.whatsappNumber.replace(/\D/g, "")}`;
   if (!message || !message.trim()) return base;
   return `${base}?text=${encodeURIComponent(message.trim())}`;
 }
 
 const whatsappMessages = {
-  general: "Hola, me gustaría pedir información sobre el local.",
-  reservarSala: (roomName?: string) =>
-    roomName
-      ? `Hola, quiero reservar la ${roomName}. ¿Qué disponibilidad tenéis?`
-      : "Hola, quiero reservar una sala de ensayo. ¿Qué disponibilidad tenéis?",
+  general: "Hola, me gustaría pedir información sobre Ziena Records.",
+  reservar: "Hola, quiero reservar la Sala Principal. ¿Qué disponibilidad tenéis?",
+  tarifa: (rate: string) => `Hola, me interesa la tarifa de ${rate}. ¿Qué disponibilidad tenéis?`,
 };
 
 /* ==========================================================================
-   3. COMPONENTES DE INTERFAZ: ICONO Y BOTÓN DE WHATSAPP
+   3. ICONOS Y BOTÓN DE WHATSAPP
    ========================================================================== */
-
-const COLORS = {
-  ink: "#0a0a0b",
-  whatsapp: "#25D366",
-  whatsappDark: "#1ebe5a",
-};
 
 function WhatsAppIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
       <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.22-8.24 8.22Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.23-.16-.48-.29Z" />
+    </svg>
+  );
+}
+
+function PinIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+
+function ClockIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
     </svg>
   );
 }
@@ -113,38 +189,27 @@ function WhatsAppButton({
   message = whatsappMessages.general,
   children = "Reservar por WhatsApp",
   size = "md",
-  fullWidth = false,
   className = "",
 }: {
   message?: string;
   children?: ReactNode;
   size?: ButtonSize;
-  fullWidth?: boolean;
   className?: string;
 }) {
-  const [hover, setHover] = useState(false);
-
   return (
     <a
       href={getWhatsAppLink(message)}
       target="_blank"
       rel="noopener noreferrer"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
       className={[
         "inline-flex items-center justify-center rounded-full font-semibold text-zinc-950",
-        "transition-all duration-200 active:scale-[0.98]",
+        "transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]",
         buttonSizes[size],
-        fullWidth ? "w-full" : "",
         className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      ].join(" ")}
       style={{
-        backgroundColor: hover ? COLORS.whatsappDark : COLORS.whatsapp,
-        boxShadow: hover
-          ? "0 10px 30px -8px rgba(37,211,102,0.6)"
-          : "0 8px 24px -10px rgba(37,211,102,0.45)",
+        backgroundColor: COLORS.whatsapp,
+        boxShadow: "0 10px 30px -10px rgba(37,211,102,0.55)",
       }}
     >
       <WhatsAppIcon className="h-5 w-5 shrink-0" />
@@ -154,370 +219,451 @@ function WhatsAppButton({
 }
 
 /* ==========================================================================
-   4. HEADER (fijo, con menú hamburguesa en móvil)
+   4. LOGO (usa /logo.png; si no existe, muestra un monograma "Z")
+   ========================================================================== */
+
+function Logo({ size = 40 }: { size?: number }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <span
+        aria-hidden="true"
+        className="inline-flex items-center justify-center rounded-xl font-black text-white"
+        style={{
+          width: size,
+          height: size,
+          fontSize: size * 0.5,
+          backgroundImage: `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.violet} 55%, ${COLORS.green})`,
+        }}
+      >
+        Z
+      </span>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/logo.png"
+      alt=""
+      width={size}
+      height={size}
+      onError={() => setFailed(true)}
+      className="rounded-xl object-contain"
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
+/* ==========================================================================
+   5. HEADER (logo + nombre + botón de reserva)
    ========================================================================== */
 
 function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  // Fondo del header al hacer scroll
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Bloquea el scroll con el menú abierto y cierra con Escape
-  useEffect(() => {
-    if (!menuOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [menuOpen]);
-
-  const closeMenu = () => setMenuOpen(false);
-  const solid = scrolled || menuOpen;
-
   return (
     <header
-      className="fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300"
+      className="fixed inset-x-0 top-0 z-50 border-b border-white/5"
       style={{
-        backgroundColor: solid ? "rgba(10,10,11,0.92)" : "transparent",
-        borderColor: solid ? "rgba(255,255,255,0.1)" : "transparent",
-        backdropFilter: solid ? "blur(12px)" : "none",
-        WebkitBackdropFilter: solid ? "blur(12px)" : "none",
+        backgroundColor: "rgba(9,9,11,0.8)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <nav
-        className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8"
-        aria-label="Navegación principal"
-      >
-        {/* Logo */}
-        <a
-          href="#inicio"
-          onClick={closeMenu}
-          className="flex items-center gap-2 text-xl font-extrabold uppercase tracking-tight text-white"
-        >
-          <span
-            aria-hidden="true"
-            className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500"
-            style={{
-              boxShadow: "0 0 12px 2px rgba(245,158,11,0.7)",
-              animation: "od-pulse 1.6s ease-in-out infinite",
-            }}
-          />
-          {site.shortName}
-          <span className="text-amber-500">.</span>
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <a href="#inicio" className="flex items-center gap-3" aria-label={`${site.name}, inicio`}>
+          <Logo size={36} />
+          <span className="text-lg font-bold tracking-tight text-white">
+            Ziena <span style={{ color: COLORS.purple }}>Records</span>
+          </span>
         </a>
 
-        {/* Navegación escritorio */}
-        <ul className="hidden items-center gap-8 md:flex">
-          {site.nav.map((item) => (
-            <li key={item.href}>
-              <a
-                href={item.href}
-                className="text-sm font-medium text-zinc-300 transition-colors hover:text-amber-500"
-              >
-                {item.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-
-        {/* CTA escritorio */}
-        <div className="hidden md:block">
-          <WhatsAppButton message={whatsappMessages.reservarSala()} size="sm">
-            Reservar
-          </WhatsAppButton>
-        </div>
-
-        {/* Botón hamburguesa (móvil) */}
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-menu"
-          aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10 md:hidden"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="h-6 w-6"
-            aria-hidden="true"
-          >
-            {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
-          </svg>
-        </button>
-      </nav>
-
-      {/* Menú móvil */}
-      <div
-        id="mobile-menu"
-        className="overflow-hidden transition-all duration-300 ease-out md:hidden"
-        style={{
-          maxHeight: menuOpen ? "32rem" : "0",
-          opacity: menuOpen ? 1 : 0,
-        }}
-      >
-        <div className="mx-auto max-w-6xl px-4 pb-6 pt-2 sm:px-6">
-          <ul className="flex flex-col">
-            {site.nav.map((item) => (
-              <li key={item.href} className="border-b border-white/5">
-                <a
-                  href={item.href}
-                  onClick={closeMenu}
-                  tabIndex={menuOpen ? 0 : -1}
-                  className="block py-4 text-lg font-semibold text-zinc-200 transition-colors hover:text-amber-500"
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-6">
-            <WhatsAppButton message={whatsappMessages.reservarSala()} fullWidth size="lg">
-              Reservar por WhatsApp
-            </WhatsAppButton>
-          </div>
-        </div>
+        <WhatsAppButton message={whatsappMessages.reservar} size="sm">
+          <span className="hidden sm:inline">Reservar por WhatsApp</span>
+          <span className="sm:hidden">Reservar</span>
+        </WhatsAppButton>
       </div>
     </header>
   );
 }
 
 /* ==========================================================================
-   5. HERO (portada)
+   6. HERO
    ========================================================================== */
 
-// Barras del ecualizador decorativo: altura máxima (%), duración y retardo
-const EQ_BARS = [
-  { h: 35, d: 0.9, delay: 0 },
-  { h: 70, d: 1.2, delay: 0.15 },
-  { h: 50, d: 0.8, delay: 0.3 },
-  { h: 90, d: 1.4, delay: 0.05 },
-  { h: 60, d: 1.0, delay: 0.45 },
-  { h: 80, d: 1.3, delay: 0.2 },
-  { h: 40, d: 0.7, delay: 0.35 },
-  { h: 65, d: 1.1, delay: 0.1 },
-  { h: 85, d: 1.5, delay: 0.5 },
-  { h: 45, d: 0.95, delay: 0.25 },
-  { h: 75, d: 1.25, delay: 0.4 },
-  { h: 30, d: 0.85, delay: 0.12 },
-];
+function RecBadge() {
+  return (
+    <div
+      className="inline-flex items-center gap-3 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em]"
+      style={{
+        borderColor: "rgba(168,85,247,0.35)",
+        backgroundColor: "rgba(168,85,247,0.08)",
+        color: "#d8b4fe",
+      }}
+    >
+      <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+        <span
+          className="absolute inset-0 rounded-full"
+          style={{
+            backgroundColor: COLORS.green,
+            animation: "zr-ping 1.6s cubic-bezier(0,0,0.2,1) infinite",
+          }}
+        />
+        <span
+          className="relative h-2.5 w-2.5 rounded-full"
+          style={{
+            backgroundColor: COLORS.green,
+            boxShadow: `0 0 10px 2px rgba(34,197,94,0.7)`,
+            animation: "zr-pulse 1.2s ease-in-out infinite",
+          }}
+        />
+      </span>
+      REC
+      <span className="h-3 w-px bg-white/20" aria-hidden="true" />
+      <span className="text-zinc-400">{site.address.city}</span>
+    </div>
+  );
+}
 
 function Hero() {
   return (
     <section
       id="inicio"
-      className="relative isolate flex min-h-screen flex-col justify-center overflow-hidden pt-24"
-      style={{ backgroundColor: COLORS.ink, minHeight: "100svh" }}
+      className="relative isolate flex flex-col justify-center overflow-hidden pb-20 pt-32 sm:pt-40"
+      style={{ minHeight: "100svh" }}
     >
-      {/* Fondo */}
+      {/* Fondo: resplandores morado y verde */}
       <div aria-hidden="true" className="absolute inset-0 -z-10">
-        {/* Resplandores ámbar */}
         <div
-          className="absolute left-1/2 -top-40 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full"
-          style={{ backgroundColor: "rgba(245,158,11,0.2)", filter: "blur(120px)" }}
+          className="absolute left-1/2 top-[-12rem] h-[36rem] w-[36rem] -translate-x-1/2 rounded-full"
+          style={{ backgroundColor: "rgba(139,92,246,0.22)", filter: "blur(130px)" }}
         />
         <div
-          className="absolute bottom-0 right-0 h-80 w-80 translate-x-1/3 rounded-full"
-          style={{ backgroundColor: "rgba(234,88,12,0.12)", filter: "blur(100px)" }}
+          className="absolute bottom-[-6rem] right-[-6rem] h-80 w-80 rounded-full"
+          style={{ backgroundColor: "rgba(34,197,94,0.12)", filter: "blur(110px)" }}
         />
-        {/* Rejilla sutil */}
         <div
           className="absolute inset-0"
           style={{
-            opacity: 0.07,
+            opacity: 0.05,
             backgroundImage:
               "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-            maskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
-            WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+            backgroundSize: "56px 56px",
+            maskImage: "radial-gradient(ellipse at center, black 25%, transparent 70%)",
+            WebkitMaskImage: "radial-gradient(ellipse at center, black 25%, transparent 70%)",
           }}
-        />
-        {/* Fundido inferior */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-40"
-          style={{ backgroundImage: `linear-gradient(to top, ${COLORS.ink}, transparent)` }}
         />
       </div>
 
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-        {/* Etiqueta REC */}
-        <div
-          className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-amber-400"
-          style={{
-            borderColor: "rgba(245,158,11,0.3)",
-            backgroundColor: "rgba(245,158,11,0.1)",
-          }}
-        >
-          <span
-            aria-hidden="true"
-            className="h-2 w-2 rounded-full"
-            style={{
-              backgroundColor: "#ef4444",
-              boxShadow: "0 0 8px 2px rgba(239,68,68,0.7)",
-              animation: "od-pulse 1.2s ease-in-out infinite",
-            }}
-          />
-          REC · {site.address.city} · {site.tagline}
-        </div>
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-4 text-center sm:px-6">
+        <RecBadge />
 
-        {/* Título */}
-        <h1 className="max-w-4xl text-4xl font-extrabold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
-          Tu música suena mejor{" "}
+        <h1 className="mt-8 text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+          Estudio de Ensayo y Grabación{" "}
           <span
             style={{
-              backgroundImage: "linear-gradient(to right, #fbbf24, #ea580c)",
+              backgroundImage: `linear-gradient(90deg, ${COLORS.purple}, ${COLORS.violet} 45%, ${COLORS.green})`,
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               color: "transparent",
             }}
           >
-            aquí
+            en Ourense
           </span>
         </h1>
 
-        <p className="mt-6 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-          Salas de ensayo insonorizadas con backline incluido, estudio de grabación y
-          producción, y alquiler de equipo de sonido e instrumentos. Reserva en un minuto por
-          WhatsApp.
+        <p className="mt-6 max-w-xl text-base leading-relaxed text-zinc-400 sm:text-lg">
+          Una sala insonorizada con todo el equipo listo para tocar. Ensaya con tu banda o graba
+          tu música. Reserva en un minuto por WhatsApp.
         </p>
 
-        {/* Botones */}
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <WhatsAppButton
-            message={whatsappMessages.reservarSala()}
-            size="lg"
-            className="sm:w-auto"
-            fullWidth
-          >
-            Reservar sala
+        <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+          <WhatsAppButton message={whatsappMessages.reservar} size="lg">
+            Reservar por WhatsApp
           </WhatsAppButton>
           <a
-            href="#tarifas"
-            className="inline-flex w-full items-center justify-center rounded-full border border-white/20 px-8 py-4 text-lg font-semibold text-white transition-colors hover:border-amber-500 hover:text-amber-500 sm:w-auto"
+            href="#sala"
+            className="text-sm font-semibold text-zinc-300 underline-offset-4 transition-colors hover:text-white hover:underline"
           >
-            Ver tarifas
+            Ver sala y tarifas ↓
           </a>
         </div>
-
-        {/* Ecualizador decorativo */}
-        <div aria-hidden="true" className="mt-12 flex h-14 items-end gap-1.5 sm:h-20">
-          {EQ_BARS.map((bar, i) => (
-            <span
-              key={i}
-              className="w-1.5 rounded-full sm:w-2"
-              style={{
-                height: `${bar.h}%`,
-                backgroundImage: "linear-gradient(to top, #d97706, #fcd34d)",
-                transformOrigin: "bottom",
-                animation: `od-eq ${bar.d}s ease-in-out ${bar.delay}s infinite`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Datos de confianza */}
-        <dl className="mt-10 grid grid-cols-2 gap-4 border-t border-white/10 pt-8 sm:grid-cols-4 sm:gap-8">
-          {site.trustPoints.map((point) => (
-            <div key={point.label}>
-              <dt className="text-2xl font-extrabold text-amber-500 sm:text-3xl">
-                {point.value}
-              </dt>
-              <dd className="mt-1 text-sm text-zinc-400">{point.label}</dd>
-            </div>
-          ))}
-        </dl>
       </div>
     </section>
   );
 }
 
 /* ==========================================================================
-   6. BOTÓN FLOTANTE DE WHATSAPP
+   7. FICHA DE LA SALA PRINCIPAL + TARIFAS
    ========================================================================== */
 
-function FloatingWhatsApp({
-  message = whatsappMessages.general,
-  showAfter = 320,
-}: {
-  message?: string;
-  showAfter?: number;
-}) {
-  const [visible, setVisible] = useState(false);
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <p
+      className="text-xs font-semibold uppercase tracking-[0.25em]"
+      style={{ color: COLORS.purple }}
+    >
+      {children}
+    </p>
+  );
+}
 
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > showAfter);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [showAfter]);
+function RoomSection() {
+  const { room, rates } = site;
 
   return (
+    <section id="sala" className="border-t border-white/5 py-20 sm:py-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl">
+          <SectionLabel>La sala</SectionLabel>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            {room.name}
+          </h2>
+          <p className="mt-4 text-zinc-400 sm:text-lg">{room.description}</p>
+        </div>
+
+        {/* Ficha: datos + equipamiento */}
+        <div className="mt-12 grid gap-6 lg:grid-cols-5">
+          <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 lg:col-span-2 lg:grid-cols-1">
+            {room.specs.map((spec) => (
+              <div key={spec.label} className="p-5 sm:p-6" style={{ backgroundColor: COLORS.ink }}>
+                <dt className="text-xs uppercase tracking-wider text-zinc-500">{spec.label}</dt>
+                <dd className="mt-1 text-lg font-semibold text-white sm:text-xl">{spec.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 sm:p-8 lg:col-span-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-300">
+              Equipamiento incluido
+            </h3>
+            <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+              {room.equipment.map((item) => (
+                <li key={item} className="flex items-center gap-3 text-zinc-200">
+                  <span
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: "rgba(34,197,94,0.12)", color: COLORS.green }}
+                  >
+                    <CheckIcon className="h-3.5 w-3.5" />
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Tarifas */}
+        <div id="tarifas" className="mt-20">
+          <SectionLabel>Tarifas</SectionLabel>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            Precios claros, sin sorpresas
+          </h2>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {rates.map((rate) => (
+              <article
+                key={rate.name}
+                className="relative flex flex-col rounded-2xl border p-6 sm:p-8"
+                style={{
+                  borderColor: rate.featured ? "rgba(168,85,247,0.6)" : "rgba(255,255,255,0.1)",
+                  backgroundColor: rate.featured ? "rgba(139,92,246,0.08)" : "rgba(255,255,255,0.02)",
+                  boxShadow: rate.featured ? "0 20px 60px -30px rgba(168,85,247,0.6)" : "none",
+                }}
+              >
+                {rate.featured && (
+                  <span
+                    className="absolute -top-3 left-6 rounded-full px-3 py-1 text-xs font-semibold text-white"
+                    style={{ backgroundColor: COLORS.violet }}
+                  >
+                    Más popular
+                  </span>
+                )}
+                <h3 className="text-lg font-semibold text-white">{rate.name}</h3>
+                <p className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold tracking-tight text-white">
+                    {rate.price}
+                  </span>
+                  {rate.unit && <span className="text-zinc-400">{rate.unit}</span>}
+                </p>
+                <p className="mt-3 flex-1 text-sm text-zinc-400">{rate.detail}</p>
+                <a
+                  href={getWhatsAppLink(whatsappMessages.tarifa(rate.name.toLowerCase()))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors"
+                  style={{
+                    borderColor: rate.featured ? COLORS.whatsapp : "rgba(255,255,255,0.15)",
+                    backgroundColor: rate.featured ? COLORS.whatsapp : "transparent",
+                    color: rate.featured ? "#09090b" : "#e4e4e7",
+                  }}
+                >
+                  <WhatsAppIcon className="h-4 w-4" />
+                  Reservar
+                </a>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   8. UBICACIÓN Y CONTACTO
+   ========================================================================== */
+
+function ContactSection() {
+  return (
+    <section id="contacto" className="border-t border-white/5 py-20 sm:py-28">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <div className="flex flex-col">
+          <SectionLabel>Ubicación y contacto</SectionLabel>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            Te esperamos en Ourense
+          </h2>
+
+          <ul className="mt-8 space-y-6">
+            <li className="flex gap-4">
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{ backgroundColor: "rgba(168,85,247,0.12)", color: COLORS.purple }}
+              >
+                <PinIcon />
+              </span>
+              <div>
+                <p className="font-semibold text-white">{site.address.street}</p>
+                <p className="text-zinc-400">
+                  {site.address.postalCode} {site.address.city}
+                </p>
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-block text-sm font-semibold transition-colors hover:text-white"
+                  style={{ color: COLORS.green }}
+                >
+                  Cómo llegar →
+                </a>
+              </div>
+            </li>
+            <li className="flex gap-4">
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{ backgroundColor: "rgba(168,85,247,0.12)", color: COLORS.purple }}
+              >
+                <ClockIcon />
+              </span>
+              <dl className="space-y-1">
+                {site.hours.map((h) => (
+                  <div key={h.days} className="flex flex-wrap gap-x-2">
+                    <dt className="font-semibold text-white">{h.days}:</dt>
+                    <dd className="text-zinc-400">{h.time}</dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+            <li className="flex gap-4">
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{ backgroundColor: "rgba(37,211,102,0.12)", color: COLORS.whatsapp }}
+              >
+                <WhatsAppIcon />
+              </span>
+              <div>
+                <p className="font-semibold text-white">{site.phoneDisplay}</p>
+                <p className="text-zinc-400">Respondemos rápido por WhatsApp</p>
+              </div>
+            </li>
+          </ul>
+
+          <div className="mt-10">
+            <WhatsAppButton message={whatsappMessages.general} size="lg">
+              Escríbenos por WhatsApp
+            </WhatsAppButton>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-white/10">
+          <iframe
+            title={`Mapa: ${fullAddress}`}
+            src={mapsEmbedUrl}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="h-80 w-full lg:h-full lg:min-h-[28rem]"
+            style={{ border: 0, filter: "grayscale(0.6) invert(0.92) hue-rotate(180deg)" }}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   9. FOOTER Y BOTÓN FLOTANTE
+   ========================================================================== */
+
+function Footer() {
+  return (
+    <footer className="border-t border-white/5 py-8">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-sm text-zinc-500 sm:flex-row sm:px-6 lg:px-8">
+        <div className="flex items-center gap-2">
+          <Logo size={24} />
+          <span>
+            © {new Date().getFullYear()} {site.name}
+          </span>
+        </div>
+        <span>{fullAddress}</span>
+      </div>
+    </footer>
+  );
+}
+
+function FloatingWhatsApp() {
+  return (
     <a
-      href={getWhatsAppLink(message)}
+      href={getWhatsAppLink(whatsappMessages.general)}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escríbenos por WhatsApp"
-      tabIndex={visible ? 0 : -1}
-      className="fixed z-40 flex items-center gap-2 rounded-full p-4 text-zinc-950 transition-all duration-300 hover:scale-105 active:scale-95"
+      className="fixed z-40 flex h-14 w-14 items-center justify-center rounded-full text-white transition-transform duration-200 hover:scale-110 active:scale-95"
       style={{
-        right: "1rem",
-        bottom: "max(1rem, env(safe-area-inset-bottom))",
+        right: "1.25rem",
+        bottom: "max(1.25rem, env(safe-area-inset-bottom))",
         backgroundColor: COLORS.whatsapp,
-        boxShadow: "0 10px 30px -8px rgba(37,211,102,0.5)",
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(1rem)",
-        pointerEvents: visible ? "auto" : "none",
+        boxShadow: "0 12px 30px -8px rgba(37,211,102,0.6)",
       }}
     >
-      {/* Onda de aviso */}
       <span
         aria-hidden="true"
         className="absolute inset-0 -z-10 rounded-full"
         style={{
-          backgroundColor: "rgba(37,211,102,0.4)",
-          animation: "od-ping 1.8s cubic-bezier(0,0,0.2,1) infinite",
+          backgroundColor: "rgba(37,211,102,0.45)",
+          animation: "zr-ping 2s cubic-bezier(0,0,0.2,1) infinite",
         }}
       />
       <WhatsAppIcon className="h-7 w-7" />
-      <span className="hidden pr-1 text-sm font-semibold sm:inline">¿Hablamos?</span>
     </a>
   );
 }
 
 /* ==========================================================================
-   7. PÁGINA
+   10. PÁGINA
    ========================================================================== */
 
 export default function HomePage() {
   return (
-    <div
-      className="min-h-screen text-zinc-200"
-      style={{ backgroundColor: COLORS.ink, scrollBehavior: "smooth" }}
-    >
-      {/* Animaciones propias (no dependen de la configuración de Tailwind) */}
+    <div className="min-h-screen text-zinc-200 antialiased" style={{ backgroundColor: COLORS.ink }}>
+      {/* Estilos globales y animaciones propias (no dependen de la config de Tailwind) */}
       <style>{`
         html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
-        body { background-color: ${COLORS.ink}; }
-        @keyframes od-pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
-        @keyframes od-eq { 0%,100% { transform: scaleY(.35) } 50% { transform: scaleY(1) } }
-        @keyframes od-ping { 0% { transform: scale(1); opacity: .7 } 75%,100% { transform: scale(1.8); opacity: 0 } }
+        body { background-color: ${COLORS.ink}; overflow-x: hidden; }
+        ::selection { background: rgba(168,85,247,0.35); color: #fff; }
+        @keyframes zr-pulse { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
+        @keyframes zr-ping { 0% { transform: scale(1); opacity: .7 } 75%,100% { transform: scale(2); opacity: 0 } }
         @media (prefers-reduced-motion: reduce) {
+          html { scroll-behavior: auto; }
           *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
         }
       `}</style>
@@ -526,9 +672,11 @@ export default function HomePage() {
 
       <main id="contenido">
         <Hero />
-        {/* Próximos bloques: Servicios, Salas, Tarifas, Estudio, Equipo, Contacto... */}
+        <RoomSection />
+        <ContactSection />
       </main>
 
+      <Footer />
       <FloatingWhatsApp />
     </div>
   );

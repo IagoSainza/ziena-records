@@ -1,6 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Paleta Ziena Records (por si se quieren usar como bg-ink, text-accent, etc.) */
+@theme {
+  --color-ink: #09090b;
+  --color-accent: #a855f7;
+  --color-accent-deep: #8b5cf6;
+  --color-signal: #22c55e;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
 
 @layer base {
   :root {
@@ -15,51 +23,32 @@
   }
 
   body {
-    @apply bg-ink font-sans text-zinc-200 antialiased;
+    background-color: var(--color-ink);
+    color: var(--color-zinc-200);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
     /* Evita el scroll horizontal por brillos/blur que se salen de pantalla */
     overflow-x: hidden;
   }
 
-  /* Titulares con la tipografía de display */
   h1,
   h2,
   h3,
   h4 {
-    @apply font-display;
+    font-family: var(--font-display);
   }
 
-  /* Color de selección de texto */
-  ::selection {
-    @apply bg-accent/30 text-white;
-  }
-
-  /* Anillo de foco visible y coherente con el acento */
   :focus-visible {
-    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-ink;
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 
-  /* Barra de scroll oscura (navegadores WebKit y Firefox) */
+  /* Barra de scroll oscura */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #3f3f46 #0a0a0b;
-  }
-  *::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  *::-webkit-scrollbar-track {
-    background: #0a0a0b;
-  }
-  *::-webkit-scrollbar-thumb {
-    background: #3f3f46;
-    border-radius: 9999px;
-    border: 2px solid #0a0a0b;
-  }
-  *::-webkit-scrollbar-thumb:hover {
-    background: #f59e0b;
+    scrollbar-color: #3f3f46 #09090b;
   }
 
-  /* Respeta a quien prefiere menos movimiento */
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;
@@ -71,17 +60,5 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
-  }
-}
-
-@layer components {
-  /* Texto con degradado ámbar → naranja (para palabras destacadas) */
-  .text-gradient-accent {
-    @apply bg-gradient-to-r from-accent-light to-accent-deep bg-clip-text text-transparent;
-  }
-
-  /* Contenedor estándar de contenido */
-  .container-page {
-    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
   }
 }
