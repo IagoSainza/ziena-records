@@ -19,9 +19,9 @@ const spaceGrotesk = Space_Grotesk({
 // URL pública del sitio. Defínela en .env.local / Vercel: NEXT_PUBLIC_SITE_URL
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-const fullTitle = "Ziena Records | Estudio de Ensayo y Grabación en Ourense";
+const fullTitle = "Ziena Records | Estudio de Grabación y local de ensayo en Ourense";
 const description =
-  "Estudio de ensayo y grabación en Ourense (Av. Portugal, 133, sótano). Equipamiento profesional y reserva directa por WhatsApp.";
+  "Estudio de grabación y local de ensayo en Ourense (Av. Portugal, 133, sótano). Equipamiento profesional y reserva directa por WhatsApp.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

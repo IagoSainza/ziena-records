@@ -7,9 +7,9 @@
 export const site = {
   name: "Ziena Records",
   shortName: "Ziena",
-  tagline: "Estudio de ensayo y grabación",
+  tagline: "Estudio de grabación y local de ensayo",
   description:
-    "Estudio de ensayo y grabación en Ourense (Av. Portugal, 133, sótano). Equipamiento profesional y reserva directa por WhatsApp.",
+    "Estudio de grabación y local de ensayo en Ourense (Av. Portugal, 133, sótano). Equipamiento profesional y reserva directa por WhatsApp.",
 
   // Número en formato internacional SIN "+" ni espacios (34 = España).
   whatsappNumber: "34679475522",

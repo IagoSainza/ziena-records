@@ -411,7 +411,7 @@ function PromoBanner() {
       <div className="flex w-full items-center justify-center">
         <ImageWithFallback
           src="/banner.png"
-          alt="Ziena Records, estudio de ensayo y grabación en Ourense"
+          alt="Ziena Records, estudio de grabación y local de ensayo en Ourense"
           className="block h-auto max-h-[70vh] w-full object-contain"
           fallback={
             <div className="flex flex-col items-center gap-4 px-6 py-16 text-center">
@@ -493,7 +493,7 @@ function Hero() {
         <RecBadge />
 
         <h1 className="mt-8 text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
-          Estudio de Ensayo y Grabación{" "}
+          Estudio de Grabación y local de ensayo{" "}
           <span
             style={{
               backgroundImage: `linear-gradient(90deg, ${COLORS.purple}, ${COLORS.violet} 45%, ${COLORS.green})`,
