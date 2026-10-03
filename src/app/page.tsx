@@ -31,6 +31,7 @@ const site = {
   // Número internacional SIN "+" ni espacios (34 = España)
   whatsappNumber: "34679475522",
   phoneDisplay: "679 47 55 22",
+  email: "ziena.records@gmail.com",
 
   address: {
     street: "Av. Portugal, 133, sótano",
@@ -178,6 +179,13 @@ const ClockIcon = ({ className }: { className?: string }) => (
   <LineIcon className={className}>
     <circle cx="12" cy="12" r="9" />
     <path d="M12 7v5l3 2" />
+  </LineIcon>
+);
+
+const MailIcon = ({ className }: { className?: string }) => (
+  <LineIcon className={className}>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="M3.5 6.5l8.5 6 8.5-6" />
   </LineIcon>
 );
 
@@ -382,18 +390,37 @@ function Header() {
         WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <a href="#inicio" className="flex items-center gap-3" aria-label={`${site.name}, inicio`}>
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
+        <a
+          href="#inicio"
+          className="flex min-w-0 items-center gap-2.5 sm:gap-3"
+          aria-label={`${site.name}, inicio`}
+        >
           <Logo size={36} />
-          <span className="text-lg font-bold tracking-tight text-white">
+          {/* En móviles muy estrechos (<360 px) basta con el logo */}
+          <span className="hidden truncate text-base font-bold tracking-tight text-white min-[360px]:inline sm:text-lg">
             Ziena <span style={{ color: COLORS.purple }}>Records</span>
           </span>
         </a>
 
-        <WhatsAppButton message={whatsappMessages.reservar} size="sm">
-          <span className="hidden sm:inline">Reservar por WhatsApp</span>
-          <span className="sm:hidden">Reservar</span>
-        </WhatsAppButton>
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Email: solo icono en móvil, "Email" en tablet y la dirección completa en escritorio */}
+          <a
+            href={`mailto:${site.email}`}
+            aria-label={`Enviar un email a ${site.email}`}
+            title={site.email}
+            className="inline-flex h-9 w-9 items-center justify-center gap-2 rounded-full border border-white/15 text-sm font-semibold text-zinc-200 transition-colors hover:border-[#a855f7] hover:text-white sm:w-auto sm:px-4"
+          >
+            <MailIcon className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline lg:hidden">Email</span>
+            <span className="hidden lg:inline">{site.email}</span>
+          </a>
+
+          <WhatsAppButton message={whatsappMessages.reservar} size="sm" className="h-9">
+            <span className="hidden sm:inline">Reservar por WhatsApp</span>
+            <span className="sm:hidden">Reservar</span>
+          </WhatsAppButton>
+        </div>
       </div>
     </header>
   );
