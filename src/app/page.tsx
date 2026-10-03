@@ -14,7 +14,7 @@
  *
  * Imágenes que puedes subir a /public (si faltan se muestra un diseño de reserva):
  *   /logo.png            Logo del header y footer
- *   /banner.png          Banner promocional bajo el header (recomendado 1600×500)
+ *   /banner.png          Banner a todo el ancho bajo el header (fondo negro)
  *   /galeria/*.jpg       Fotos de la galería (ver `gallery` más abajo)
  */
 
@@ -133,7 +133,7 @@ const whatsappMessages = {
   reservar: "Hola, quiero reservar la Sala Principal. ¿Qué disponibilidad tenéis?",
   presupuesto: "Hola, me gustaría pedir un presupuesto personalizado. Os cuento mi proyecto:",
   servicio: (service: string) =>
-    `Hola, quiero consultar la tarifa de ${service.toLowerCase()}. ¿Qué disponibilidad tenéis?`,
+    `Hola, quiero consultar disponibilidad y presupuesto para ${service.toLowerCase()}.`,
   sonido: "Hola, quiero pedir presupuesto de sonido en directo para un concierto/evento.",
   grabacion: "Hola, queremos grabar con nuestra banda en Ziena Records. ¿Nos dais información?",
 };
@@ -327,27 +327,27 @@ function WhatsAppButton({
 
 function Logo({ size = 40 }: { size?: number }) {
   return (
-    <ImageWithFallback
-      src="/logo.png"
-      alt=""
-      className="rounded-xl object-contain"
+    <span
+      className="inline-flex shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black"
       style={{ width: size, height: size }}
-      fallback={
-        <span
-          aria-hidden="true"
-          className="inline-flex shrink-0 items-center justify-center rounded-xl font-black text-white"
-          style={{
-            width: size,
-            height: size,
-            fontSize: size * 0.5,
-            backgroundImage: BRAND_GRADIENT,
-            boxShadow: "0 0 20px -6px rgba(168,85,247,0.7)",
-          }}
-        >
-          Z
-        </span>
-      }
-    />
+    >
+      <ImageWithFallback
+        src="/logo.png"
+        alt=""
+        // El PNG trae mucho margen negro: se amplía y recorta al centro para que se lea en pequeño
+        className="h-full w-full object-cover"
+        style={{ transform: "scale(1.45)" }}
+        fallback={
+          <span
+            aria-hidden="true"
+            className="flex h-full w-full items-center justify-center font-black text-white"
+            style={{ fontSize: size * 0.5, backgroundImage: BRAND_GRADIENT }}
+          >
+            Z
+          </span>
+        }
+      />
+    </span>
   );
 }
 
@@ -401,21 +401,20 @@ function Header() {
 
 function PromoBanner() {
   return (
-    <section id="inicio" aria-label="Banner de Ziena Records" className="px-4 pt-20 sm:px-6 lg:px-8">
-      <div
-        className="relative mx-auto flex aspect-[16/9] max-w-6xl items-center justify-center overflow-hidden rounded-3xl border border-white/10 sm:aspect-[16/5]"
-        style={{
-          backgroundColor: "#0f0f13",
-          backgroundImage:
-            "radial-gradient(ellipse at 20% 0%, rgba(139,92,246,0.28), transparent 60%), radial-gradient(ellipse at 90% 100%, rgba(34,197,94,0.16), transparent 55%)",
-        }}
-      >
+    // Franja negra a todo el ancho (pt-16 = altura del header fijo). La imagen ocupa
+    // el ancho de la pantalla; en escritorio se limita la altura y se centra sobre el negro.
+    <section
+      id="inicio"
+      aria-label="Banner de Ziena Records"
+      className="w-full border-b border-white/5 bg-black pt-16"
+    >
+      <div className="flex w-full items-center justify-center">
         <ImageWithFallback
           src="/banner.png"
           alt="Ziena Records, estudio de ensayo y grabación en Ourense"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="block h-auto max-h-[70vh] w-full object-contain"
           fallback={
-            <div className="flex flex-col items-center gap-4 px-6 text-center">
+            <div className="flex flex-col items-center gap-4 px-6 py-16 text-center">
               <Logo size={72} />
               <p className="text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
                 Ziena <span style={{ color: COLORS.purple }}>Records</span>
@@ -578,14 +577,14 @@ function RoomSection() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-xl">
               <SectionLabel>Tarifas</SectionLabel>
-              <SectionTitle>Consultar tarifa / presupuesto personalizado</SectionTitle>
+              <SectionTitle>Presupuesto personalizado</SectionTitle>
               <p className="mt-4 text-zinc-400">
                 Cada proyecto es distinto. Cuéntanos qué necesitas y te respondemos por WhatsApp con
                 disponibilidad y un presupuesto a tu medida.
               </p>
             </div>
             <WhatsAppButton message={whatsappMessages.presupuesto} size="lg" className="shrink-0">
-              Pedir presupuesto
+              Consultar disponibilidad / presupuesto
             </WhatsAppButton>
           </div>
 
@@ -604,7 +603,7 @@ function RoomSection() {
                   variant="outline"
                   className="mt-5 self-start"
                 >
-                  Consultar tarifa
+                  Consultar disponibilidad / presupuesto
                 </WhatsAppButton>
               </article>
             ))}
@@ -619,24 +618,13 @@ function RoomSection() {
    9. GALERÍA DEL LOCAL
    ========================================================================== */
 
-function GalleryCard({
-  item,
-  index,
-  featured,
-}: {
-  item: (typeof gallery)[number];
-  index: number;
-  featured: boolean;
-}) {
+function GalleryCard({ item, index }: { item: (typeof gallery)[number]; index: number }) {
   // Alterna morado y verde en las tarjetas de reserva
   const tint = index % 2 === 0 ? "rgba(139,92,246,0.3)" : "rgba(34,197,94,0.2)";
 
   return (
     <figure
-      className={[
-        "group relative overflow-hidden rounded-2xl border border-white/10",
-        featured ? "col-span-2 row-span-2 min-h-[18rem]" : "min-h-[10rem] sm:min-h-[12rem]",
-      ].join(" ")}
+      className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10"
       style={{ backgroundColor: "#111114" }}
     >
       <ImageWithFallback
@@ -646,12 +634,15 @@ function GalleryCard({
         fallback={
           <div
             aria-hidden="true"
-            className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 pb-10"
             style={{
-              backgroundImage: `radial-gradient(circle at 30% 20%, ${tint}, transparent 65%)`,
+              backgroundImage: `radial-gradient(circle at 30% 20%, ${tint}, transparent 65%), repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 14px)`,
             }}
           >
-            <CameraIcon className="h-8 w-8 text-white/25" />
+            <CameraIcon className="h-8 w-8 text-white/30" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/35">
+              Foto próximamente
+            </span>
           </div>
         }
       />
@@ -668,17 +659,17 @@ function GalleryCard({
 
 function GallerySection() {
   return (
-    <section id="galeria" className="border-t border-white/5 py-20 sm:py-28">
+    <section id="estudio" className="border-t border-white/5 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <SectionLabel>Galería</SectionLabel>
-        <SectionTitle>Conoce el local</SectionTitle>
+        <SectionTitle>El Estudio</SectionTitle>
         <p className="mt-4 max-w-2xl text-zinc-400 sm:text-lg">
           La sala, el equipo y el espacio donde suenan los ensayos y grabaciones.
         </p>
 
-        <div className="mt-10 grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-3">
           {gallery.map((item, i) => (
-            <GalleryCard key={item.src} item={item} index={i} featured={i === 0} />
+            <GalleryCard key={item.src} item={item} index={i} />
           ))}
         </div>
       </div>
@@ -715,8 +706,8 @@ function ArtistsSection() {
   return (
     <section id="artistas" className="border-t border-white/5 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <SectionLabel>Artistas y proyectos</SectionLabel>
-        <SectionTitle>Música hecha en Ourense</SectionTitle>
+        <SectionLabel>Servicios</SectionLabel>
+        <SectionTitle>Artistas y Sonido en Directo</SectionTitle>
 
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           {features.map((f) => (
@@ -766,7 +757,7 @@ function ReviewsBlock() {
     return (
       <div className="flex flex-col items-start rounded-2xl border border-white/10 bg-white/[0.02] p-6 sm:p-8">
         <Stars className="h-6 w-6" />
-        <h3 className="mt-4 text-xl font-semibold text-white">Opiniones en Google</h3>
+        <h3 className="mt-4 text-xl font-semibold text-white">Mejores reseñas en Google</h3>
         <p className="mt-2 text-zinc-400">
           Lee lo que dicen los músicos que han pasado por la sala, o cuéntanos tu experiencia.
         </p>
