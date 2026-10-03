@@ -16,12 +16,20 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
-// URL pública del sitio. Defínela en .env.local / Vercel: NEXT_PUBLIC_SITE_URL
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// URL pública del sitio (canonical, Open Graph y datos estructurados)
+const siteUrl = site.url;
 
 const fullTitle = "Ziena Records | Estudio de Grabación y local de ensayo en Ourense";
 const description =
   "Estudio de grabación y local de ensayo en Ourense (Av. Portugal, 133, sótano). Equipamiento profesional y reserva directa por WhatsApp.";
+
+// Imagen al compartir en redes (WhatsApp, Facebook, X...): el banner del logo sobre negro
+const ogImage = {
+  url: "/banner.png",
+  width: 1754,
+  height: 1240,
+  alt: `${site.name} - ${site.tagline} en ${site.address.city}`,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -31,17 +39,20 @@ export const metadata: Metadata = {
   },
   description,
   keywords: [
-    "sala de ensayo",
+    "estudio de grabación Ourense",
+    "local de ensayo Ourense",
+    "sala de ensayo Ourense",
     "alquiler sala de ensayo",
-    "estudio de grabación",
     "grabación de maquetas",
     "producción musical",
-    "alquiler de equipo de sonido",
-    "alquiler de instrumentos",
-    `sala de ensayo ${site.address.city}`,
+    "sonido en directo",
+    "Ziena Records",
   ],
   applicationName: site.name,
   authors: [{ name: site.name }],
+  creator: site.name,
+  publisher: site.name,
+  category: "music",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
@@ -50,27 +61,24 @@ export const metadata: Metadata = {
     siteName: site.name,
     title: fullTitle,
     description,
-    images: [
-      {
-        url: "/images/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: `${site.name} - ${site.tagline}`,
-      },
-    ],
+    images: [ogImage],
   },
   twitter: {
     card: "summary_large_image",
     title: fullTitle,
     description,
-    images: ["/images/og-image.jpg"],
+    images: [ogImage],
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
   // Iconos: Next.js usa automáticamente src/app/favicon.ico, icon.png y apple-icon.png
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0b",
+  themeColor: "#09090b",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -80,12 +88,15 @@ export const viewport: Viewport = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
+  "@id": `${siteUrl}/#negocio`,
   name: site.name,
   description,
   url: siteUrl,
   telephone: `+${site.whatsappNumber}`,
   ...(site.email ? { email: site.email } : {}),
-  image: `${siteUrl}/images/og-image.jpg`,
+  image: `${siteUrl}/banner.png`,
+  logo: `${siteUrl}/logo.png`,
+  hasMap: site.mapsUrl,
   address: {
     "@type": "PostalAddress",
     streetAddress: site.address.street,
@@ -120,7 +131,6 @@ export default function RootLayout({
 
         <script
           type="application/ld+json"
-          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </body>
