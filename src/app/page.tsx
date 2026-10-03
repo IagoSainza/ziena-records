@@ -11,13 +11,18 @@
  *   Morado    #a855f7 / #8b5cf6
  *   Verde     #22c55e / #10b981
  *   WhatsApp  #25D366
+ *
+ * Imágenes que puedes subir a /public (si faltan se muestra un diseño de reserva):
+ *   /logo.png            Logo del header y footer
+ *   /banner.png          Banner promocional bajo el header (recomendado 1600×500)
+ *   /galeria/*.jpg       Fotos de la galería (ver `gallery` más abajo)
  */
 
 import { useState } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 /* ==========================================================================
-   1. DATOS DEL ESTUDIO (revisa teléfono, tarifas y equipo)
+   1. DATOS DEL ESTUDIO
    ========================================================================== */
 
 const site = {
@@ -42,11 +47,6 @@ const site = {
     name: "Sala Principal",
     description:
       "Sala insonorizada y acondicionada acústicamente, preparada para ensayar con banda completa o grabar tu próxima maqueta sin salir de la sala.",
-    specs: [
-      { label: "Superficie", value: "25 m²" },
-      { label: "Capacidad", value: "Hasta 6 músicos" },
-      { label: "Climatización", value: "Sí" },
-    ],
     equipment: [
       "Batería completa con platos",
       "Amplificadores de guitarra y bajo",
@@ -57,30 +57,50 @@ const site = {
     ],
   },
 
-  rates: [
+  // Servicios para consultar tarifa (sin precios: se piden por WhatsApp)
+  services: [
     {
       name: "Ensayo",
-      price: "10 €",
-      unit: "/ hora",
-      detail: "Backline incluido. Mínimo 2 horas.",
-      featured: false,
+      detail: "Por horas o con horario fijo semanal para tu banda. Backline incluido.",
     },
     {
       name: "Grabación",
-      price: "25 €",
-      unit: "/ hora",
-      detail: "Técnico de sonido incluido. Grabación multipista.",
-      featured: true,
+      detail: "Maquetas, singles y EPs con técnico de sonido y grabación multipista.",
     },
     {
-      name: "Cuota mensual",
-      price: "Consultar",
-      unit: "",
-      detail: "Horario fijo semanal para tu banda.",
-      featured: false,
+      name: "Sonido en directo",
+      detail: "Equipo de PA y técnico para conciertos, festivales y eventos.",
     },
   ],
 } as const;
+
+/**
+ * Galería del local. Sube las fotos a /public/galeria/ con estos nombres
+ * (o cambia las rutas). Si una foto no existe, se muestra una tarjeta de reserva.
+ */
+const gallery = [
+  { src: "/galeria/sala-principal.jpg", title: "Sala Principal", caption: "Ensayo con banda completa" },
+  { src: "/galeria/bateria.jpg", title: "Batería", caption: "Kit completo con platos" },
+  { src: "/galeria/amplificacion.jpg", title: "Amplificación", caption: "Guitarra y bajo" },
+  { src: "/galeria/grabacion.jpg", title: "Puesto de grabación", caption: "Multipista y mezcla" },
+  { src: "/galeria/microfonos.jpg", title: "Microfonía", caption: "Micrófonos de estudio" },
+  { src: "/galeria/directo.jpg", title: "Sonido en directo", caption: "PA para conciertos" },
+];
+
+/**
+ * Artistas y bandas que han pasado por el estudio (solo nombres reales,
+ * con su permiso). Mientras la lista esté vacía, no se muestra el bloque.
+ * Ejemplo: { name: "Nombre de la banda", project: "EP 2026 · Grabación" }
+ */
+const artists: { name: string; project: string }[] = [];
+
+/**
+ * Reseñas REALES copiadas de la ficha de Google de Ziena Records.
+ * No inventes reseñas: publicar opiniones falsas es ilegal (Directiva Ómnibus).
+ * Mientras la lista esté vacía, se muestra un enlace a las reseñas de Google.
+ * Ejemplo: { author: "Nombre", role: "Batería", rating: 5, text: "..." }
+ */
+const reviews: { author: string; role?: string; rating: number; text: string }[] = [];
 
 const fullAddress = `${site.address.street}, ${site.address.postalCode} ${site.address.city}`;
 const mapsQuery = encodeURIComponent(`Ziena Records, ${fullAddress}`);
@@ -100,6 +120,8 @@ const COLORS = {
   whatsapp: "#25D366",
 };
 
+const BRAND_GRADIENT = `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.violet} 55%, ${COLORS.green})`;
+
 function getWhatsAppLink(message?: string) {
   const base = `https://wa.me/${site.whatsappNumber.replace(/\D/g, "")}`;
   if (!message || !message.trim()) return base;
@@ -109,11 +131,15 @@ function getWhatsAppLink(message?: string) {
 const whatsappMessages = {
   general: "Hola, me gustaría pedir información sobre Ziena Records.",
   reservar: "Hola, quiero reservar la Sala Principal. ¿Qué disponibilidad tenéis?",
-  tarifa: (rate: string) => `Hola, me interesa la tarifa de ${rate}. ¿Qué disponibilidad tenéis?`,
+  presupuesto: "Hola, me gustaría pedir un presupuesto personalizado. Os cuento mi proyecto:",
+  servicio: (service: string) =>
+    `Hola, quiero consultar la tarifa de ${service.toLowerCase()}. ¿Qué disponibilidad tenéis?`,
+  sonido: "Hola, quiero pedir presupuesto de sonido en directo para un concierto/evento.",
+  grabacion: "Hola, queremos grabar con nuestra banda en Ziena Records. ¿Nos dais información?",
 };
 
 /* ==========================================================================
-   3. ICONOS Y BOTÓN DE WHATSAPP
+   3. ICONOS
    ========================================================================== */
 
 function WhatsAppIcon({ className = "h-5 w-5" }: { className?: string }) {
@@ -124,7 +150,7 @@ function WhatsAppIcon({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
-function PinIcon({ className = "h-5 w-5" }: { className?: string }) {
+function LineIcon({ className = "h-5 w-5", children }: { className?: string; children: ReactNode }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -136,29 +162,46 @@ function PinIcon({ className = "h-5 w-5" }: { className?: string }) {
       aria-hidden="true"
       className={className}
     >
-      <path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z" />
-      <circle cx="12" cy="10" r="2.5" />
+      {children}
     </svg>
   );
 }
 
-function ClockIcon({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
-  );
-}
+const PinIcon = ({ className }: { className?: string }) => (
+  <LineIcon className={className}>
+    <path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z" />
+    <circle cx="12" cy="10" r="2.5" />
+  </LineIcon>
+);
+
+const ClockIcon = ({ className }: { className?: string }) => (
+  <LineIcon className={className}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </LineIcon>
+);
+
+const CameraIcon = ({ className }: { className?: string }) => (
+  <LineIcon className={className}>
+    <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+    <circle cx="12" cy="13" r="3.5" />
+  </LineIcon>
+);
+
+const MicIcon = ({ className }: { className?: string }) => (
+  <LineIcon className={className}>
+    <rect x="9" y="3" width="6" height="11" rx="3" />
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+  </LineIcon>
+);
+
+const SpeakerIcon = ({ className }: { className?: string }) => (
+  <LineIcon className={className}>
+    <rect x="6" y="3" width="12" height="18" rx="2" />
+    <circle cx="12" cy="14" r="3.5" />
+    <circle cx="12" cy="7.5" r="1" />
+  </LineIcon>
+);
 
 function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -177,6 +220,65 @@ function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
+function Stars({ rating = 5, className = "h-4 w-4" }: { rating?: number; className?: string }) {
+  return (
+    <span className="flex gap-0.5" role="img" aria-label={`${rating} de 5 estrellas`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <svg
+          key={i}
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className={className}
+          fill={i < rating ? "#facc15" : "rgba(255,255,255,0.15)"}
+        >
+          <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
+/* ==========================================================================
+   4. IMAGEN CON RESPALDO (si el archivo no existe, pinta `fallback`)
+   ========================================================================== */
+
+function ImageWithFallback({
+  src,
+  alt,
+  className,
+  style,
+  fallback,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  style?: CSSProperties;
+  fallback: ReactNode;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return <>{fallback}</>;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      style={style}
+      onError={() => setFailed(true)}
+      // Si la imagen falló antes de hidratar, onError no llega a dispararse
+      ref={(img) => {
+        if (img && img.complete && img.naturalWidth === 0) setFailed(true);
+      }}
+    />
+  );
+}
+
+/* ==========================================================================
+   5. BOTÓN DE WHATSAPP Y LOGO
+   ========================================================================== */
+
 type ButtonSize = "sm" | "md" | "lg";
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -189,27 +291,32 @@ function WhatsAppButton({
   message = whatsappMessages.general,
   children = "Reservar por WhatsApp",
   size = "md",
+  variant = "solid",
   className = "",
 }: {
   message?: string;
   children?: ReactNode;
   size?: ButtonSize;
+  variant?: "solid" | "outline";
   className?: string;
 }) {
+  const solid = variant === "solid";
   return (
     <a
       href={getWhatsAppLink(message)}
       target="_blank"
       rel="noopener noreferrer"
       className={[
-        "inline-flex items-center justify-center rounded-full font-semibold text-zinc-950",
+        "inline-flex items-center justify-center rounded-full border font-semibold",
         "transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]",
         buttonSizes[size],
         className,
       ].join(" ")}
       style={{
-        backgroundColor: COLORS.whatsapp,
-        boxShadow: "0 10px 30px -10px rgba(37,211,102,0.55)",
+        borderColor: solid ? COLORS.whatsapp : "rgba(255,255,255,0.15)",
+        backgroundColor: solid ? COLORS.whatsapp : "transparent",
+        color: solid ? "#09090b" : "#e4e4e7",
+        boxShadow: solid ? "0 10px 30px -10px rgba(37,211,102,0.55)" : "none",
       }}
     >
       <WhatsAppIcon className="h-5 w-5 shrink-0" />
@@ -218,46 +325,51 @@ function WhatsAppButton({
   );
 }
 
-/* ==========================================================================
-   4. LOGO (usa /logo.png; si no existe, muestra un monograma "Z")
-   ========================================================================== */
-
 function Logo({ size = 40 }: { size?: number }) {
-  const [failed, setFailed] = useState(false);
-
-  if (failed) {
-    return (
-      <span
-        aria-hidden="true"
-        className="inline-flex items-center justify-center rounded-xl font-black text-white"
-        style={{
-          width: size,
-          height: size,
-          fontSize: size * 0.5,
-          backgroundImage: `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.violet} 55%, ${COLORS.green})`,
-        }}
-      >
-        Z
-      </span>
-    );
-  }
-
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <ImageWithFallback
       src="/logo.png"
       alt=""
-      width={size}
-      height={size}
-      onError={() => setFailed(true)}
       className="rounded-xl object-contain"
       style={{ width: size, height: size }}
+      fallback={
+        <span
+          aria-hidden="true"
+          className="inline-flex shrink-0 items-center justify-center rounded-xl font-black text-white"
+          style={{
+            width: size,
+            height: size,
+            fontSize: size * 0.5,
+            backgroundImage: BRAND_GRADIENT,
+            boxShadow: "0 0 20px -6px rgba(168,85,247,0.7)",
+          }}
+        >
+          Z
+        </span>
+      }
     />
   );
 }
 
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <p
+      className="text-xs font-semibold uppercase tracking-[0.25em]"
+      style={{ color: COLORS.purple }}
+    >
+      {children}
+    </p>
+  );
+}
+
+function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">{children}</h2>
+  );
+}
+
 /* ==========================================================================
-   5. HEADER (logo + nombre + botón de reserva)
+   6. HEADER Y BANNER PROMOCIONAL
    ========================================================================== */
 
 function Header() {
@@ -287,8 +399,40 @@ function Header() {
   );
 }
 
+function PromoBanner() {
+  return (
+    <section id="inicio" aria-label="Banner de Ziena Records" className="px-4 pt-20 sm:px-6 lg:px-8">
+      <div
+        className="relative mx-auto flex aspect-[16/9] max-w-6xl items-center justify-center overflow-hidden rounded-3xl border border-white/10 sm:aspect-[16/5]"
+        style={{
+          backgroundColor: "#0f0f13",
+          backgroundImage:
+            "radial-gradient(ellipse at 20% 0%, rgba(139,92,246,0.28), transparent 60%), radial-gradient(ellipse at 90% 100%, rgba(34,197,94,0.16), transparent 55%)",
+        }}
+      >
+        <ImageWithFallback
+          src="/banner.png"
+          alt="Ziena Records, estudio de ensayo y grabación en Ourense"
+          className="absolute inset-0 h-full w-full object-cover"
+          fallback={
+            <div className="flex flex-col items-center gap-4 px-6 text-center">
+              <Logo size={72} />
+              <p className="text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
+                Ziena <span style={{ color: COLORS.purple }}>Records</span>
+              </p>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400 sm:text-sm">
+                Ensayo · Grabación · Sonido en directo
+              </p>
+            </div>
+          }
+        />
+      </div>
+    </section>
+  );
+}
+
 /* ==========================================================================
-   6. HERO
+   7. HERO
    ========================================================================== */
 
 function RecBadge() {
@@ -313,7 +457,7 @@ function RecBadge() {
           className="relative h-2.5 w-2.5 rounded-full"
           style={{
             backgroundColor: COLORS.green,
-            boxShadow: `0 0 10px 2px rgba(34,197,94,0.7)`,
+            boxShadow: "0 0 10px 2px rgba(34,197,94,0.7)",
             animation: "zr-pulse 1.2s ease-in-out infinite",
           }}
         />
@@ -327,20 +471,11 @@ function RecBadge() {
 
 function Hero() {
   return (
-    <section
-      id="inicio"
-      className="relative isolate flex flex-col justify-center overflow-hidden pb-20 pt-32 sm:pt-40"
-      style={{ minHeight: "100svh" }}
-    >
-      {/* Fondo: resplandores morado y verde */}
+    <section className="relative isolate overflow-hidden py-20 sm:py-28">
       <div aria-hidden="true" className="absolute inset-0 -z-10">
         <div
-          className="absolute left-1/2 top-[-12rem] h-[36rem] w-[36rem] -translate-x-1/2 rounded-full"
-          style={{ backgroundColor: "rgba(139,92,246,0.22)", filter: "blur(130px)" }}
-        />
-        <div
-          className="absolute bottom-[-6rem] right-[-6rem] h-80 w-80 rounded-full"
-          style={{ backgroundColor: "rgba(34,197,94,0.12)", filter: "blur(110px)" }}
+          className="absolute left-1/2 top-[-10rem] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full"
+          style={{ backgroundColor: "rgba(139,92,246,0.18)", filter: "blur(130px)" }}
         />
         <div
           className="absolute inset-0"
@@ -373,8 +508,8 @@ function Hero() {
         </h1>
 
         <p className="mt-6 max-w-xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-          Una sala insonorizada con todo el equipo listo para tocar. Ensaya con tu banda o graba
-          tu música. Reserva en un minuto por WhatsApp.
+          Una sala insonorizada con todo el equipo listo para tocar. Ensaya con tu banda, graba tu
+          música o lleva nuestro sonido a tu directo. Reserva en un minuto por WhatsApp.
         </p>
 
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
@@ -385,7 +520,7 @@ function Hero() {
             href="#sala"
             className="text-sm font-semibold text-zinc-300 underline-offset-4 transition-colors hover:text-white hover:underline"
           >
-            Ver sala y tarifas ↓
+            Ver la sala ↓
           </a>
         </div>
       </div>
@@ -394,46 +529,23 @@ function Hero() {
 }
 
 /* ==========================================================================
-   7. FICHA DE LA SALA PRINCIPAL + TARIFAS
+   8. SALA PRINCIPAL + CONSULTAR TARIFA
    ========================================================================== */
 
-function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="text-xs font-semibold uppercase tracking-[0.25em]"
-      style={{ color: COLORS.purple }}
-    >
-      {children}
-    </p>
-  );
-}
-
 function RoomSection() {
-  const { room, rates } = site;
+  const { room, services } = site;
 
   return (
     <section id="sala" className="border-t border-white/5 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl">
-          <SectionLabel>La sala</SectionLabel>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            {room.name}
-          </h2>
-          <p className="mt-4 text-zinc-400 sm:text-lg">{room.description}</p>
-        </div>
+        <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
+          <div>
+            <SectionLabel>La sala</SectionLabel>
+            <SectionTitle>{room.name}</SectionTitle>
+            <p className="mt-4 text-zinc-400 sm:text-lg">{room.description}</p>
+          </div>
 
-        {/* Ficha: datos + equipamiento */}
-        <div className="mt-12 grid gap-6 lg:grid-cols-5">
-          <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 lg:col-span-2 lg:grid-cols-1">
-            {room.specs.map((spec) => (
-              <div key={spec.label} className="p-5 sm:p-6" style={{ backgroundColor: COLORS.ink }}>
-                <dt className="text-xs uppercase tracking-wider text-zinc-500">{spec.label}</dt>
-                <dd className="mt-1 text-lg font-semibold text-white sm:text-xl">{spec.value}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 sm:p-8 lg:col-span-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 sm:p-8">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-300">
               Equipamiento incluido
             </h3>
@@ -453,54 +565,47 @@ function RoomSection() {
           </div>
         </div>
 
-        {/* Tarifas */}
-        <div id="tarifas" className="mt-20">
-          <SectionLabel>Tarifas</SectionLabel>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Precios claros, sin sorpresas
-          </h2>
+        {/* Tarifas a medida: sin precios, consulta por WhatsApp */}
+        <div
+          id="tarifas"
+          className="relative mt-16 overflow-hidden rounded-3xl border p-6 sm:p-10"
+          style={{
+            borderColor: "rgba(168,85,247,0.35)",
+            backgroundImage:
+              "radial-gradient(ellipse at 0% 0%, rgba(139,92,246,0.16), transparent 60%), radial-gradient(ellipse at 100% 100%, rgba(34,197,94,0.1), transparent 55%)",
+          }}
+        >
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-xl">
+              <SectionLabel>Tarifas</SectionLabel>
+              <SectionTitle>Consultar tarifa / presupuesto personalizado</SectionTitle>
+              <p className="mt-4 text-zinc-400">
+                Cada proyecto es distinto. Cuéntanos qué necesitas y te respondemos por WhatsApp con
+                disponibilidad y un presupuesto a tu medida.
+              </p>
+            </div>
+            <WhatsAppButton message={whatsappMessages.presupuesto} size="lg" className="shrink-0">
+              Pedir presupuesto
+            </WhatsAppButton>
+          </div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {rates.map((rate) => (
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {services.map((service) => (
               <article
-                key={rate.name}
-                className="relative flex flex-col rounded-2xl border p-6 sm:p-8"
-                style={{
-                  borderColor: rate.featured ? "rgba(168,85,247,0.6)" : "rgba(255,255,255,0.1)",
-                  backgroundColor: rate.featured ? "rgba(139,92,246,0.08)" : "rgba(255,255,255,0.02)",
-                  boxShadow: rate.featured ? "0 20px 60px -30px rgba(168,85,247,0.6)" : "none",
-                }}
+                key={service.name}
+                className="flex flex-col rounded-2xl border border-white/10 p-6"
+                style={{ backgroundColor: "rgba(9,9,11,0.6)" }}
               >
-                {rate.featured && (
-                  <span
-                    className="absolute -top-3 left-6 rounded-full px-3 py-1 text-xs font-semibold text-white"
-                    style={{ backgroundColor: COLORS.violet }}
-                  >
-                    Más popular
-                  </span>
-                )}
-                <h3 className="text-lg font-semibold text-white">{rate.name}</h3>
-                <p className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold tracking-tight text-white">
-                    {rate.price}
-                  </span>
-                  {rate.unit && <span className="text-zinc-400">{rate.unit}</span>}
-                </p>
-                <p className="mt-3 flex-1 text-sm text-zinc-400">{rate.detail}</p>
-                <a
-                  href={getWhatsAppLink(whatsappMessages.tarifa(rate.name.toLowerCase()))}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors"
-                  style={{
-                    borderColor: rate.featured ? COLORS.whatsapp : "rgba(255,255,255,0.15)",
-                    backgroundColor: rate.featured ? COLORS.whatsapp : "transparent",
-                    color: rate.featured ? "#09090b" : "#e4e4e7",
-                  }}
+                <h3 className="text-lg font-semibold text-white">{service.name}</h3>
+                <p className="mt-2 flex-1 text-sm text-zinc-400">{service.detail}</p>
+                <WhatsAppButton
+                  message={whatsappMessages.servicio(service.name)}
+                  size="sm"
+                  variant="outline"
+                  className="mt-5 self-start"
                 >
-                  <WhatsAppIcon className="h-4 w-4" />
-                  Reservar
-                </a>
+                  Consultar tarifa
+                </WhatsAppButton>
               </article>
             ))}
           </div>
@@ -511,89 +616,70 @@ function RoomSection() {
 }
 
 /* ==========================================================================
-   8. UBICACIÓN Y CONTACTO
+   9. GALERÍA DEL LOCAL
    ========================================================================== */
 
-function ContactSection() {
+function GalleryCard({
+  item,
+  index,
+  featured,
+}: {
+  item: (typeof gallery)[number];
+  index: number;
+  featured: boolean;
+}) {
+  // Alterna morado y verde en las tarjetas de reserva
+  const tint = index % 2 === 0 ? "rgba(139,92,246,0.3)" : "rgba(34,197,94,0.2)";
+
   return (
-    <section id="contacto" className="border-t border-white/5 py-20 sm:py-28">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-        <div className="flex flex-col">
-          <SectionLabel>Ubicación y contacto</SectionLabel>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Te esperamos en Ourense
-          </h2>
-
-          <ul className="mt-8 space-y-6">
-            <li className="flex gap-4">
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                style={{ backgroundColor: "rgba(168,85,247,0.12)", color: COLORS.purple }}
-              >
-                <PinIcon />
-              </span>
-              <div>
-                <p className="font-semibold text-white">{site.address.street}</p>
-                <p className="text-zinc-400">
-                  {site.address.postalCode} {site.address.city}
-                </p>
-                <a
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-block text-sm font-semibold transition-colors hover:text-white"
-                  style={{ color: COLORS.green }}
-                >
-                  Cómo llegar →
-                </a>
-              </div>
-            </li>
-            <li className="flex gap-4">
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                style={{ backgroundColor: "rgba(168,85,247,0.12)", color: COLORS.purple }}
-              >
-                <ClockIcon />
-              </span>
-              <dl className="space-y-1">
-                {site.hours.map((h) => (
-                  <div key={h.days} className="flex flex-wrap gap-x-2">
-                    <dt className="font-semibold text-white">{h.days}:</dt>
-                    <dd className="text-zinc-400">{h.time}</dd>
-                  </div>
-                ))}
-              </dl>
-            </li>
-            <li className="flex gap-4">
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                style={{ backgroundColor: "rgba(37,211,102,0.12)", color: COLORS.whatsapp }}
-              >
-                <WhatsAppIcon />
-              </span>
-              <div>
-                <p className="font-semibold text-white">{site.phoneDisplay}</p>
-                <p className="text-zinc-400">Respondemos rápido por WhatsApp</p>
-              </div>
-            </li>
-          </ul>
-
-          <div className="mt-10">
-            <WhatsAppButton message={whatsappMessages.general} size="lg">
-              Escríbenos por WhatsApp
-            </WhatsAppButton>
+    <figure
+      className={[
+        "group relative overflow-hidden rounded-2xl border border-white/10",
+        featured ? "col-span-2 row-span-2 min-h-[18rem]" : "min-h-[10rem] sm:min-h-[12rem]",
+      ].join(" ")}
+      style={{ backgroundColor: "#111114" }}
+    >
+      <ImageWithFallback
+        src={item.src}
+        alt={`${item.title}: ${item.caption}`}
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        fallback={
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 flex items-center justify-center"
+            style={{
+              backgroundImage: `radial-gradient(circle at 30% 20%, ${tint}, transparent 65%)`,
+            }}
+          >
+            <CameraIcon className="h-8 w-8 text-white/25" />
           </div>
-        </div>
+        }
+      />
+      <figcaption
+        className="absolute inset-x-0 bottom-0 p-4"
+        style={{ backgroundImage: "linear-gradient(to top, rgba(9,9,11,0.9), transparent)" }}
+      >
+        <p className="font-semibold text-white">{item.title}</p>
+        <p className="text-xs text-zinc-400">{item.caption}</p>
+      </figcaption>
+    </figure>
+  );
+}
 
-        <div className="overflow-hidden rounded-2xl border border-white/10">
-          <iframe
-            title={`Mapa: ${fullAddress}`}
-            src={mapsEmbedUrl}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="h-80 w-full lg:h-full lg:min-h-[28rem]"
-            style={{ border: 0, filter: "grayscale(0.6) invert(0.92) hue-rotate(180deg)" }}
-          />
+function GallerySection() {
+  return (
+    <section id="galeria" className="border-t border-white/5 py-20 sm:py-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <SectionLabel>Galería</SectionLabel>
+        <SectionTitle>Conoce el local</SectionTitle>
+        <p className="mt-4 max-w-2xl text-zinc-400 sm:text-lg">
+          La sala, el equipo y el espacio donde suenan los ensayos y grabaciones.
+        </p>
+
+        <div className="mt-10 grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
+          {gallery.map((item, i) => (
+            <GalleryCard key={item.src} item={item} index={i} featured={i === 0} />
+          ))}
         </div>
       </div>
     </section>
@@ -601,7 +687,240 @@ function ContactSection() {
 }
 
 /* ==========================================================================
-   9. FOOTER Y BOTÓN FLOTANTE
+   10. ARTISTAS Y PROYECTOS
+   ========================================================================== */
+
+function ArtistsSection() {
+  const features = [
+    {
+      icon: <MicIcon className="h-6 w-6" />,
+      color: COLORS.purple,
+      bg: "rgba(168,85,247,0.12)",
+      title: "Han pasado por el estudio",
+      text: "Bandas y solistas que han ensayado y grabado sus maquetas, singles y EPs en Ziena Records. Te acompañamos desde la primera toma hasta la mezcla.",
+      cta: "Grabar con mi banda",
+      message: whatsappMessages.grabacion,
+    },
+    {
+      icon: <SpeakerIcon className="h-6 w-6" />,
+      color: COLORS.green,
+      bg: "rgba(34,197,94,0.12)",
+      title: "Sonorización en directo",
+      text: "Llevamos equipo de PA y técnico de sonido a conciertos, festivales y eventos, para que tu banda suene igual de bien sobre el escenario que en el local.",
+      cta: "Presupuesto de sonido",
+      message: whatsappMessages.sonido,
+    },
+  ];
+
+  return (
+    <section id="artistas" className="border-t border-white/5 py-20 sm:py-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <SectionLabel>Artistas y proyectos</SectionLabel>
+        <SectionTitle>Música hecha en Ourense</SectionTitle>
+
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {features.map((f) => (
+            <article
+              key={f.title}
+              className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.02] p-6 sm:p-8"
+            >
+              <span
+                className="flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{ backgroundColor: f.bg, color: f.color }}
+              >
+                {f.icon}
+              </span>
+              <h3 className="mt-5 text-xl font-semibold text-white">{f.title}</h3>
+              <p className="mt-3 flex-1 text-zinc-400">{f.text}</p>
+              <WhatsAppButton message={f.message} size="sm" variant="outline" className="mt-6 self-start">
+                {f.cta}
+              </WhatsAppButton>
+            </article>
+          ))}
+        </div>
+
+        {artists.length > 0 && (
+          <ul className="mt-8 flex flex-wrap gap-3">
+            {artists.map((a) => (
+              <li
+                key={a.name}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm"
+              >
+                <span className="font-semibold text-white">{a.name}</span>
+                <span className="text-zinc-500"> · {a.project}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   11. RESEÑAS + UBICACIÓN Y MAPA
+   ========================================================================== */
+
+function ReviewsBlock() {
+  if (reviews.length === 0) {
+    return (
+      <div className="flex flex-col items-start rounded-2xl border border-white/10 bg-white/[0.02] p-6 sm:p-8">
+        <Stars className="h-6 w-6" />
+        <h3 className="mt-4 text-xl font-semibold text-white">Opiniones en Google</h3>
+        <p className="mt-2 text-zinc-400">
+          Lee lo que dicen los músicos que han pasado por la sala, o cuéntanos tu experiencia.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-110"
+            style={{ backgroundImage: BRAND_GRADIENT }}
+          >
+            Ver reseñas en Google
+          </a>
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-white/40"
+          >
+            Dejar una reseña
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4">
+      {reviews.map((r) => (
+        <figure
+          key={`${r.author}-${r.text.slice(0, 16)}`}
+          className="rounded-2xl border border-white/10 bg-white/[0.02] p-6"
+        >
+          <Stars rating={r.rating} />
+          <blockquote className="mt-3 text-zinc-200">“{r.text}”</blockquote>
+          <figcaption className="mt-4 flex items-center gap-3 text-sm">
+            <span
+              aria-hidden="true"
+              className="flex h-8 w-8 items-center justify-center rounded-full font-bold text-white"
+              style={{ backgroundImage: BRAND_GRADIENT }}
+            >
+              {r.author.charAt(0).toUpperCase()}
+            </span>
+            <span>
+              <span className="font-semibold text-white">{r.author}</span>
+              {r.role && <span className="text-zinc-500"> · {r.role}</span>}
+            </span>
+          </figcaption>
+        </figure>
+      ))}
+      <a
+        href={mapsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm font-semibold transition-colors hover:text-white"
+        style={{ color: COLORS.green }}
+      >
+        Ver todas las reseñas en Google →
+      </a>
+    </div>
+  );
+}
+
+function ReviewsAndLocationSection() {
+  return (
+    <section id="contacto" className="border-t border-white/5 py-20 sm:py-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <SectionLabel>Opiniones y ubicación</SectionLabel>
+        <SectionTitle>Te esperamos en Ourense</SectionTitle>
+
+        <div className="mt-10 grid gap-8 lg:grid-cols-2">
+          {/* Columna izquierda: reseñas + datos de contacto */}
+          <div className="flex flex-col gap-8">
+            <ReviewsBlock />
+
+            <ul className="space-y-6">
+              <li className="flex gap-4">
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: "rgba(168,85,247,0.12)", color: COLORS.purple }}
+                >
+                  <PinIcon className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="font-semibold text-white">{site.address.street}</p>
+                  <p className="text-zinc-400">
+                    {site.address.postalCode} {site.address.city}
+                  </p>
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-block text-sm font-semibold transition-colors hover:text-white"
+                    style={{ color: COLORS.green }}
+                  >
+                    Cómo llegar →
+                  </a>
+                </div>
+              </li>
+              <li className="flex gap-4">
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: "rgba(168,85,247,0.12)", color: COLORS.purple }}
+                >
+                  <ClockIcon className="h-5 w-5" />
+                </span>
+                <dl className="space-y-1">
+                  {site.hours.map((h) => (
+                    <div key={h.days} className="flex flex-wrap gap-x-2">
+                      <dt className="font-semibold text-white">{h.days}:</dt>
+                      <dd className="text-zinc-400">{h.time}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </li>
+              <li className="flex gap-4">
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: "rgba(37,211,102,0.12)", color: COLORS.whatsapp }}
+                >
+                  <WhatsAppIcon />
+                </span>
+                <div>
+                  <p className="font-semibold text-white">{site.phoneDisplay}</p>
+                  <p className="text-zinc-400">Respondemos rápido por WhatsApp</p>
+                </div>
+              </li>
+            </ul>
+
+            <WhatsAppButton message={whatsappMessages.general} size="lg" className="self-start">
+              Escríbenos por WhatsApp
+            </WhatsAppButton>
+          </div>
+
+          {/* Columna derecha: mapa interactivo */}
+          <div className="overflow-hidden rounded-2xl border border-white/10">
+            <iframe
+              title={`Mapa: ${fullAddress}`}
+              src={mapsEmbedUrl}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+              className="h-96 w-full lg:h-full lg:min-h-[32rem]"
+              style={{ border: 0, filter: "grayscale(0.6) invert(0.92) hue-rotate(180deg)" }}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   12. FOOTER Y BOTÓN FLOTANTE
    ========================================================================== */
 
 function Footer() {
@@ -649,7 +968,7 @@ function FloatingWhatsApp() {
 }
 
 /* ==========================================================================
-   10. PÁGINA
+   13. PÁGINA
    ========================================================================== */
 
 export default function HomePage() {
@@ -671,9 +990,12 @@ export default function HomePage() {
       <Header />
 
       <main id="contenido">
+        <PromoBanner />
         <Hero />
         <RoomSection />
-        <ContactSection />
+        <GallerySection />
+        <ArtistsSection />
+        <ReviewsAndLocationSection />
       </main>
 
       <Footer />
