@@ -776,6 +776,62 @@ function ArtistsSection() {
 }
 
 /* ==========================================================================
+   10b. GALERÍA DE CLIENTES / ARTISTAS
+   Fotos en /public/fotos/artistas/ con nombres numéricos: 1.jpg, 2.jpg, 3.jpg...
+   Se muestran en orden hasta ARTIST_PHOTOS_MAX. Los números que no existan se
+   ocultan, y si no hay ninguna foto la sección no aparece.
+   ========================================================================== */
+
+const ARTIST_PHOTOS_DIR = "/fotos/artistas";
+const ARTIST_PHOTOS_MAX = 12;
+
+function ArtistPhoto({ n, onMissing }: { n: number; onMissing: (n: number) => void }) {
+  return (
+    <figure className="relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`${ARTIST_PHOTOS_DIR}/${n}.jpg`}
+        alt={`Artista en Ziena Records, foto ${n}`}
+        className="h-full w-full object-cover"
+        onError={() => onMissing(n)}
+        // Si la imagen falló antes de hidratar, onError no llega a dispararse
+        ref={(img) => {
+          if (img && img.complete && img.naturalWidth === 0) onMissing(n);
+        }}
+      />
+    </figure>
+  );
+}
+
+function ArtistPhotosSection() {
+  const [missing, setMissing] = useState<ReadonlySet<number>>(() => new Set());
+
+  const markMissing = (n: number) =>
+    setMissing((prev) => (prev.has(n) ? prev : new Set(prev).add(n)));
+
+  const photos = Array.from({ length: ARTIST_PHOTOS_MAX }, (_, i) => i + 1).filter(
+    (n) => !missing.has(n)
+  );
+
+  if (photos.length === 0) return null;
+
+  return (
+    <section id="clientes" className="border-t border-white/5 py-20 sm:py-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <SectionLabel>Clientes y artistas</SectionLabel>
+        <SectionTitle>Han pasado por Ziena Records</SectionTitle>
+
+        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {photos.map((n) => (
+            <ArtistPhoto key={n} n={n} onMissing={markMissing} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
    11. RESEÑAS + UBICACIÓN Y MAPA
    ========================================================================== */
 
@@ -1013,6 +1069,7 @@ export default function HomePage() {
         <RoomSection />
         <GallerySection />
         <ArtistsSection />
+        <ArtistPhotosSection />
         <ReviewsAndLocationSection />
       </main>
 
