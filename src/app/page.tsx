@@ -49,12 +49,15 @@ const site = {
     description:
       "Sala insonorizada y acondicionada acústicamente, preparada para ensayar con banda completa o grabar tu próxima maqueta sin salir de la sala.",
     equipment: [
-      "Batería completa con platos",
-      "Amplificadores de guitarra y bajo",
-      "Equipo de voces con PA",
-      "Micrófonos de estudio",
-      "Mesa de mezclas digital",
-      "Grabación multipista",
+      "ENGL Thunder 50",
+      "Line 6 Spider III",
+      "Pantalla Marshall 2x12",
+      "Amplificador de bajo Fender",
+      "Yamaha 01V",
+      "Altavoces Phonic Performer A230",
+      "Tama Imperialstar",
+      "Line 6 Spider IV",
+      "Microfonía",
     ],
   },
 
