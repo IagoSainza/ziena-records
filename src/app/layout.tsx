@@ -49,8 +49,9 @@ export const metadata: Metadata = {
     "Ziena Records",
   ],
   applicationName: site.name,
-  authors: [{ name: site.name }],
-  creator: site.name,
+  // Firma del desarrollador (solo visible en el código fuente de la página)
+  authors: [{ name: "IagoSainza", url: "https://github.com/IagoSainza" }],
+  creator: "IagoSainza",
   publisher: site.name,
   category: "music",
   alternates: { canonical: "/" },

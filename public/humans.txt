@@ -1,0 +1,8 @@
+/* EQUIPO */
+Desarrollo web: IagoSainza
+Contacto: https://github.com/IagoSainza
+
+/* SITIO */
+Proyecto: Ziena Records
+Ubicación: Ourense, España
+Tecnología: Next.js, React, Tailwind CSS
