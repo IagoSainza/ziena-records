@@ -821,8 +821,7 @@ function ArtistPhotosSection() {
   return (
     <section id="clientes" className="border-t border-white/5 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <SectionLabel>Clientes y artistas</SectionLabel>
-        <SectionTitle>Han pasado por Ziena Records</SectionTitle>
+        <SectionLabel>Artistas y experiencias</SectionLabel>
 
         <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {photos.map((n) => (
