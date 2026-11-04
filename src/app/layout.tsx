@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { site } from "@/data/site";
 import "./globals.css";
 
@@ -129,6 +130,9 @@ export default function RootLayout({
         </a>
 
         {children}
+
+        {/* Estadísticas de visitas (Vercel Web Analytics, sin cookies) */}
+        <Analytics />
 
         <script
           type="application/ld+json"
