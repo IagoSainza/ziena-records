@@ -121,10 +121,10 @@ const BRAND_GRADIENT = `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.viole
 const whatsappMessages = {
   general: "Hola, me gustaría pedir información sobre Ziena Records.",
   reservar: "Hola, quiero reservar la Sala Principal. ¿Qué disponibilidad tenéis?",
-  presupuesto: "Hola, me gustaría pedir un presupuesto personalizado. Os cuento mi proyecto:",
+  consulta: "Hola, me gustaría haceros una consulta. Os cuento mi proyecto:",
   servicio: (service: string) =>
-    `Hola, quiero consultar disponibilidad y presupuesto para ${service.toLowerCase()}.`,
-  sonido: "Hola, quiero pedir presupuesto de sonido en directo para un concierto/evento.",
+    `Hola, quiero consultar disponibilidad y más información sobre ${service.toLowerCase()}.`,
+  sonido: "Hola, quiero pedir información sobre sonido en directo para un concierto/evento.",
   grabacion: "Hola, queremos grabar con nuestra banda en Ziena Records. ¿Nos dais información?",
 };
 
@@ -573,9 +573,9 @@ function RoomSection() {
           </div>
         </div>
 
-        {/* Tarifas a medida: sin precios, consulta por WhatsApp */}
+        {/* Consultas a medida: sin precios, consulta por WhatsApp */}
         <div
-          id="tarifas"
+          id="consultas"
           className="relative mt-16 overflow-hidden rounded-3xl border p-6 sm:p-10"
           style={{
             borderColor: "rgba(168,85,247,0.35)",
@@ -585,15 +585,15 @@ function RoomSection() {
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-xl">
-              <SectionLabel>Tarifas</SectionLabel>
-              <SectionTitle>Presupuesto personalizado</SectionTitle>
+              <SectionLabel>Consultas</SectionLabel>
+              <SectionTitle>Consúltanos sin compromiso</SectionTitle>
               <p className="mt-4 text-zinc-400">
                 Cada proyecto es distinto. Cuéntanos qué necesitas y te respondemos por WhatsApp con
-                disponibilidad y un presupuesto a tu medida.
+                disponibilidad y más detalles.
               </p>
             </div>
-            <WhatsAppButton message={whatsappMessages.presupuesto} size="lg" className="shrink-0">
-              Consultar disponibilidad / presupuesto
+            <WhatsAppButton message={whatsappMessages.consulta} size="lg" className="shrink-0">
+              Consultar disponibilidad
             </WhatsAppButton>
           </div>
 
@@ -612,7 +612,7 @@ function RoomSection() {
                   variant="outline"
                   className="mt-5 self-start"
                 >
-                  Consultar disponibilidad / presupuesto
+                  Consultar disponibilidad
                 </WhatsAppButton>
               </article>
             ))}
@@ -731,7 +731,7 @@ function ArtistsSection() {
       bg: "rgba(34,197,94,0.12)",
       title: "Sonorización en directo",
       text: "Llevamos equipo de PA y técnico de sonido a conciertos, festivales y eventos, para que tu banda suene igual de bien sobre el escenario que en el local.",
-      cta: "Presupuesto de sonido",
+      cta: "Pedir información",
       message: whatsappMessages.sonido,
     },
   ];
