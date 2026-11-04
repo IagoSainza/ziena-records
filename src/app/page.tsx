@@ -18,7 +18,7 @@
  *   /galeria/*.jpg       Fotos de la galería (ver `gallery` más abajo)
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 /* ==========================================================================
@@ -779,56 +779,372 @@ function ArtistsSection() {
 }
 
 /* ==========================================================================
-   10b. GALERÍA DE CLIENTES / ARTISTAS
-   Fotos en /public/fotos/artistas/ con nombres numéricos: 1.jpg, 2.jpg, 3.jpg...
-   Se muestran en orden hasta ARTIST_PHOTOS_MAX. Los números que no existan se
-   ocultan, y si no hay ninguna foto la sección no aparece.
+   10b. ARTISTAS Y EXPERIENCIAS
+   Pestañas + foto destacada que cambia sola + galería completa al pulsar.
+   Fotos en /public/fotos/artistas/ con nombres numéricos: 1.jpg, 2.jpg...
+   Para mover una foto de pestaña, cambia su número en PHOTO_GROUPS.
    ========================================================================== */
 
 const ARTIST_PHOTOS_DIR = "/fotos/artistas";
-const ARTIST_PHOTOS_MAX = 12;
+const SLIDE_INTERVAL_MS = 5000;
 
-function ArtistPhoto({ n, onMissing }: { n: number; onMissing: (n: number) => void }) {
+type PhotoGroupData = { key: string; label: string; alt: string; photos: number[] };
+type ModalState = { mode: "grid" | "photo"; index: number } | null;
+
+const PHOTO_GROUPS: PhotoGroupData[] = [
+  { key: "artistas", label: "Artistas", alt: "Artista en Ziena Records", photos: [1, 2, 3, 5, 7, 9] },
+  { key: "experiencias", label: "Experiencias", alt: "Experiencia en Ziena Records", photos: [4, 6, 8, 10] },
+];
+
+const photoSrc = (n: number) => `${ARTIST_PHOTOS_DIR}/${n}.jpg`;
+
+function ChevronIcon({ dir }: { dir: "prev" | "next" }) {
   return (
-    <figure className="relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`${ARTIST_PHOTOS_DIR}/${n}.jpg`}
-        alt={`Artista en Ziena Records, foto ${n}`}
-        className="h-full w-full object-cover"
-        onError={() => onMissing(n)}
-        // Si la imagen falló antes de hidratar, onError no llega a dispararse
-        ref={(img) => {
-          if (img && img.complete && img.naturalWidth === 0) onMissing(n);
-        }}
-      />
-    </figure>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      {dir === "prev" ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}
+    </svg>
+  );
+}
+
+function RoundButton({
+  label,
+  onClick,
+  children,
+  className = "",
+}: {
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white transition-colors hover:border-white/60 ${className}`}
+      style={{ backgroundColor: "rgba(9,9,11,0.55)", backdropFilter: "blur(6px)" }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Ventana con todas las fotos de una pestaña (cuadrícula) y visor ampliado. */
+function PhotoModal({
+  group,
+  state,
+  setState,
+}: {
+  group: PhotoGroupData;
+  state: { mode: "grid" | "photo"; index: number };
+  setState: (s: ModalState) => void;
+}) {
+  const { photos } = group;
+  const total = photos.length;
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const touchX = useRef<number | null>(null);
+
+  const step = (d: 1 | -1) =>
+    setState({ mode: "photo", index: (state.index + d + total) % total });
+
+  // Bloquea el scroll de la página mientras está abierta
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+
+  // Teclado: Esc cierra, flechas cambian de foto
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setState(null);
+      if (state.mode === "photo" && e.key === "ArrowRight") step(1);
+      if (state.mode === "photo" && e.key === "ArrowLeft") step(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Fotos: ${group.label}`}
+      className="fixed inset-0 z-[100] flex flex-col"
+      style={{ backgroundColor: "rgba(5,5,7,0.96)" }}
+    >
+      {/* Cabecera */}
+      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <p className="text-sm font-semibold uppercase tracking-widest text-zinc-200">
+          {group.label}
+          <span className="text-zinc-500">
+            {" · "}
+            {state.mode === "photo" ? `${state.index + 1} / ${total}` : `${total} fotos`}
+          </span>
+        </p>
+        <div className="flex items-center gap-2">
+          {state.mode === "photo" && (
+            <button
+              type="button"
+              onClick={() => setState({ mode: "grid", index: state.index })}
+              className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition-colors hover:border-white/60"
+            >
+              Ver todas
+            </button>
+          )}
+          <button
+            ref={closeRef}
+            type="button"
+            aria-label="Cerrar"
+            onClick={() => setState(null)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white transition-colors hover:border-white/60"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Contenido */}
+      {state.mode === "grid" ? (
+        <div className="flex-1 overflow-y-auto px-4 pb-8 pt-2 sm:px-6">
+          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {photos.map((n, i) => (
+              <button
+                key={n}
+                type="button"
+                aria-label={`Ver la foto ${i + 1} ampliada`}
+                onClick={() => setState({ mode: "photo", index: i })}
+                className="group relative aspect-square overflow-hidden rounded-xl border border-white/10"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photoSrc(n)}
+                  alt={`${group.alt}, foto ${i + 1}`}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div
+          className="relative flex min-h-0 flex-1 items-center justify-center px-2 pb-6 sm:px-20"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setState(null);
+          }}
+          onTouchStart={(e) => {
+            touchX.current = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            if (touchX.current === null) return;
+            const dx = e.changedTouches[0].clientX - touchX.current;
+            touchX.current = null;
+            if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photoSrc(photos[state.index])}
+            alt={`${group.alt}, foto ${state.index + 1}`}
+            className="max-w-full rounded-xl object-contain"
+            style={{ maxHeight: "calc(100svh - 7rem)" }}
+          />
+          {total > 1 && (
+            <>
+              <RoundButton
+                label="Foto anterior"
+                onClick={() => step(-1)}
+                className="absolute left-2 top-1/2 -translate-y-1/2 sm:left-6"
+              >
+                <ChevronIcon dir="prev" />
+              </RoundButton>
+              <RoundButton
+                label="Foto siguiente"
+                onClick={() => step(1)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 sm:right-6"
+              >
+                <ChevronIcon dir="next" />
+              </RoundButton>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
 function ArtistPhotosSection() {
-  const [missing, setMissing] = useState<ReadonlySet<number>>(() => new Set());
+  const [tab, setTab] = useState(0);
+  const [idx, setIdx] = useState(0);
+  const [hover, setHover] = useState(false);
+  const [modal, setModal] = useState<ModalState>(null);
 
-  const markMissing = (n: number) =>
-    setMissing((prev) => (prev.has(n) ? prev : new Set(prev).add(n)));
+  const group = PHOTO_GROUPS[tab];
+  const total = group.photos.length;
 
-  const photos = Array.from({ length: ARTIST_PHOTOS_MAX }, (_, i) => i + 1).filter(
-    (n) => !missing.has(n)
-  );
+  const selectTab = (i: number) => {
+    setTab(i);
+    setIdx(0);
+  };
+  const go = (d: 1 | -1) => setIdx((c) => (c + d + total) % total);
 
-  if (photos.length === 0) return null;
+  // Cambio automático de foto (se pausa al pasar el ratón o con la galería abierta)
+  useEffect(() => {
+    if (modal || hover || total < 2) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(() => setIdx((c) => (c + 1) % total), SLIDE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [modal, hover, total, idx]);
 
   return (
     <section id="clientes" className="border-t border-white/5 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <SectionLabel>Artistas y experiencias</SectionLabel>
 
-        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {photos.map((n) => (
-            <ArtistPhoto key={n} n={n} onMissing={markMissing} />
+        {/* Pestañas */}
+        <div
+          role="tablist"
+          aria-label="Artistas y experiencias"
+          className="mt-6 inline-flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1"
+        >
+          {PHOTO_GROUPS.map((g, i) => (
+            <button
+              key={g.key}
+              type="button"
+              role="tab"
+              aria-selected={i === tab}
+              onClick={() => selectTab(i)}
+              className="rounded-full px-5 py-2 text-sm font-semibold transition-colors"
+              style={
+                i === tab
+                  ? { backgroundColor: "#7c3aed", color: "#fff" }
+                  : { color: "#a1a1aa" }
+              }
+            >
+              {g.label}
+            </button>
           ))}
         </div>
+
+        {/* Foto destacada */}
+        <div
+          className="relative mt-6 aspect-[4/3] max-h-[75svh] w-full overflow-hidden rounded-2xl border border-white/10 bg-black sm:aspect-[16/9]"
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+        >
+          {group.photos.map((n, i) => (
+            <div
+              key={`${group.key}-${n}`}
+              className="absolute inset-0 transition-opacity duration-700"
+              style={{ opacity: i === idx ? 1 : 0 }}
+              aria-hidden={i !== idx}
+            >
+              {/* Fondo desenfocado: rellena los huecos sin recortar la foto */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoSrc(n)}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-2xl"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoSrc(n)}
+                alt={`${group.alt}, foto ${i + 1}`}
+                loading={i === 0 ? "eager" : "lazy"}
+                className="relative h-full w-full object-contain"
+              />
+            </div>
+          ))}
+
+          {/* Pulsar la foto = abrir la galería ampliada */}
+          <button
+            type="button"
+            aria-label="Ampliar foto"
+            onClick={() => setModal({ mode: "photo", index: idx })}
+            className="absolute inset-0 z-10 cursor-zoom-in"
+          />
+
+          {total > 1 && (
+            <>
+              <RoundButton
+                label="Foto anterior"
+                onClick={() => go(-1)}
+                className="absolute left-3 top-1/2 z-20 -translate-y-1/2"
+              >
+                <ChevronIcon dir="prev" />
+              </RoundButton>
+              <RoundButton
+                label="Foto siguiente"
+                onClick={() => go(1)}
+                className="absolute right-3 top-1/2 z-20 -translate-y-1/2"
+              >
+                <ChevronIcon dir="next" />
+              </RoundButton>
+            </>
+          )}
+
+          {/* Barra inferior: puntos + ver todas */}
+          <div
+            className="absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-3 p-4 pt-12"
+            style={{
+              backgroundImage: "linear-gradient(to top, rgba(9,9,11,0.85), rgba(9,9,11,0))",
+              pointerEvents: "none",
+            }}
+          >
+            <div className="flex items-center gap-2" style={{ pointerEvents: "auto" }}>
+              {group.photos.map((n, i) => (
+                <button
+                  key={n}
+                  type="button"
+                  aria-label={`Ir a la foto ${i + 1}`}
+                  onClick={() => setIdx(i)}
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: i === idx ? "1.5rem" : "0.5rem",
+                    backgroundColor: i === idx ? COLORS.purple : "rgba(255,255,255,0.45)",
+                  }}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setModal({ mode: "grid", index: idx })}
+              className="rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors"
+              style={{ backgroundColor: "#7c3aed", pointerEvents: "auto" }}
+            >
+              Ver todas ({total})
+            </button>
+          </div>
+        </div>
       </div>
+
+      {modal && <PhotoModal group={group} state={modal} setState={setModal} />}
     </section>
   );
 }
