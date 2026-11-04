@@ -786,7 +786,7 @@ function ArtistsSection() {
    ========================================================================== */
 
 const ARTIST_PHOTOS_DIR = "/fotos/artistas";
-const SLIDE_INTERVAL_MS = 5000;
+const SLIDE_INTERVAL_MS = 3500;
 
 type PhotoGroupData = { key: string; label: string; alt: string; photos: number[] };
 type ModalState = { mode: "grid" | "photo"; index: number } | null;
