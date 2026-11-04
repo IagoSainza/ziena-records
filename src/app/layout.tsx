@@ -56,6 +56,7 @@ export const metadata: Metadata = {
   publisher: site.name,
   category: "music",
   alternates: { canonical: "/" },
+  verification: { google: "fYKjHiCDgqLc7tZqLttXK2h6aaNM-jDddSTztCPug5k" },
   openGraph: {
     type: "website",
     locale: "es_ES",
