@@ -20,29 +20,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { site as siteInfo } from "@/data/site";
+import { getWhatsAppLink } from "@/lib/whatsapp";
 
 /* ==========================================================================
    1. DATOS DEL ESTUDIO
    ========================================================================== */
 
+/**
+ * Datos generales (nombre, teléfono, email, dirección, horarios): se editan en
+ * src/data/site.ts, que también usan el SEO, el sitemap y los datos de Google.
+ * Aquí solo quedan los textos propios de la página (la sala y los servicios).
+ */
 const site = {
-  name: "Ziena Records",
-
-  // Número internacional SIN "+" ni espacios (34 = España)
-  whatsappNumber: "34679475522",
-  phoneDisplay: "679 47 55 22",
-  email: "ziena.records@gmail.com",
-
-  address: {
-    street: "Av. Portugal, 133, sótano",
-    postalCode: "32002",
-    city: "Ourense",
-  },
-
-  hours: [
-    { days: "Lunes a viernes", time: "10:00 – 23:00" },
-    { days: "Sábados y domingos", time: "Con cita previa" },
-  ],
+  ...siteInfo,
 
   room: {
     name: "Sala Principal",
@@ -80,7 +71,8 @@ const site = {
 
 /**
  * Galería del local. Sube las fotos a /public/galeria/ con estos nombres
- * (o cambia las rutas). Si una foto no existe, se muestra una tarjeta de reserva.
+ * (o cambia las rutas). Las fotos que no existan se omiten y, mientras no haya
+ * ninguna subida, la sección "El Estudio" no se muestra.
  */
 const gallery = [
   { src: "/galeria/sala-principal.jpg", title: "Sala Principal", caption: "Ensayo con banda completa" },
@@ -125,12 +117,6 @@ const COLORS = {
 };
 
 const BRAND_GRADIENT = `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.violet} 55%, ${COLORS.green})`;
-
-function getWhatsAppLink(message?: string) {
-  const base = `https://wa.me/${site.whatsappNumber.replace(/\D/g, "")}`;
-  if (!message || !message.trim()) return base;
-  return `${base}?text=${encodeURIComponent(message.trim())}`;
-}
 
 const whatsappMessages = {
   general: "Hola, me gustaría pedir información sobre Ziena Records.",
@@ -189,13 +175,6 @@ const MailIcon = ({ className }: { className?: string }) => (
   <LineIcon className={className}>
     <rect x="3" y="5" width="18" height="14" rx="2" />
     <path d="M3.5 6.5l8.5 6 8.5-6" />
-  </LineIcon>
-);
-
-const CameraIcon = ({ className }: { className?: string }) => (
-  <LineIcon className={className}>
-    <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
-    <circle cx="12" cy="13" r="3.5" />
   </LineIcon>
 );
 
@@ -648,33 +627,51 @@ function RoomSection() {
    9. GALERÍA DEL LOCAL
    ========================================================================== */
 
-function GalleryCard({ item, index }: { item: (typeof gallery)[number]; index: number }) {
-  // Alterna morado y verde en las tarjetas de reserva
-  const tint = index % 2 === 0 ? "rgba(139,92,246,0.3)" : "rgba(34,197,94,0.2)";
+/** Rutas de las fotos de la galería (constante para que el efecto no se repita). */
+const GALLERY_SRCS = gallery.map((g) => g.src);
 
+/**
+ * Comprueba en el navegador qué fotos existen de verdad.
+ * Devuelve null mientras comprueba y, después, la lista de rutas válidas.
+ */
+function useExistingImages(srcs: string[]) {
+  const [existing, setExisting] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      srcs.map(
+        (src) =>
+          new Promise<string | null>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(src);
+            img.onerror = () => resolve(null);
+            img.src = src;
+          })
+      )
+    ).then((results) => {
+      if (!cancelled) setExisting(results.filter((r): r is string => r !== null));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [srcs]);
+
+  return existing;
+}
+
+function GalleryCard({ item }: { item: (typeof gallery)[number] }) {
   return (
     <figure
       className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10"
       style={{ backgroundColor: "#111114" }}
     >
-      <ImageWithFallback
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src={item.src}
         alt={`${item.title}: ${item.caption}`}
+        loading="lazy"
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-        fallback={
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 flex flex-col items-center justify-center gap-2 pb-10"
-            style={{
-              backgroundImage: `radial-gradient(circle at 30% 20%, ${tint}, transparent 65%), repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 14px)`,
-            }}
-          >
-            <CameraIcon className="h-8 w-8 text-white/30" />
-            <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/35">
-              Foto próximamente
-            </span>
-          </div>
-        }
       />
       <figcaption
         className="absolute inset-x-0 bottom-0 p-4"
@@ -688,6 +685,12 @@ function GalleryCard({ item, index }: { item: (typeof gallery)[number]; index: n
 }
 
 function GallerySection() {
+  const existing = useExistingImages(GALLERY_SRCS);
+  const items = gallery.filter((g) => existing?.includes(g.src));
+
+  // Sin fotos subidas la sección no se muestra; aparece sola al añadirlas a /public/galeria/
+  if (items.length === 0) return null;
+
   return (
     <section id="estudio" className="border-t border-white/5 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -698,8 +701,8 @@ function GallerySection() {
         </p>
 
         <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-3">
-          {gallery.map((item, i) => (
-            <GalleryCard key={item.src} item={item} index={i} />
+          {items.map((item) => (
+            <GalleryCard key={item.src} item={item} />
           ))}
         </div>
       </div>
