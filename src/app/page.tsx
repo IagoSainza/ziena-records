@@ -798,6 +798,27 @@ const PHOTO_GROUPS: PhotoGroupData[] = [
 
 const photoSrc = (n: number) => `${ARTIST_PHOTOS_DIR}/${n}.jpg`;
 
+/**
+ * Textos que se muestran sobre cada foto (clave = número de la foto).
+ * Las fotos que no estén aquí se muestran sin texto.
+ *   title:    nombre (artístico) de la persona, o lugar/evento en "Experiencias"
+ *   subtitle: grupo, o "Artista independiente", o el año...
+ */
+type PhotoCaption = { title: string; subtitle?: string };
+
+const PHOTO_CAPTIONS: Record<number, PhotoCaption> = {
+  1: { title: "Yosi", subtitle: "Cantante de Los Suaves" },
+};
+
+const photoAlt = (group: PhotoGroupData, n: number, i: number) => {
+  const c = PHOTO_CAPTIONS[n];
+  return c
+    ? `${c.title}${c.subtitle ? `, ${c.subtitle}` : ""}, en Ziena Records`
+    : `${group.alt}, foto ${i + 1}`;
+};
+
+const CAPTION_SHADOW = "0 2px 12px rgba(0,0,0,0.85)";
+
 function ChevronIcon({ dir }: { dir: "prev" | "next" }) {
   return (
     <svg
@@ -942,10 +963,31 @@ function PhotoModal({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photoSrc(n)}
-                  alt={`${group.alt}, foto ${i + 1}`}
+                  alt={photoAlt(group, n, i)}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
+                {PHOTO_CAPTIONS[n] && (
+                  <span
+                    className="absolute inset-x-0 bottom-0 px-3 pb-2 pt-8 text-left"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(to top, rgba(9,9,11,0.85), rgba(9,9,11,0))",
+                    }}
+                  >
+                    <span className="block text-sm font-bold text-white">
+                      {PHOTO_CAPTIONS[n].title}
+                    </span>
+                    {PHOTO_CAPTIONS[n].subtitle && (
+                      <span
+                        className="block text-[11px] font-semibold uppercase tracking-wider"
+                        style={{ color: "#c4b5fd" }}
+                      >
+                        {PHOTO_CAPTIONS[n].subtitle}
+                      </span>
+                    )}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -966,13 +1008,34 @@ function PhotoModal({
             if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={photoSrc(photos[state.index])}
-            alt={`${group.alt}, foto ${state.index + 1}`}
-            className="max-w-full rounded-xl object-contain"
-            style={{ maxHeight: "calc(100svh - 7rem)" }}
-          />
+          <div className="flex max-w-full flex-col items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photoSrc(photos[state.index])}
+              alt={photoAlt(group, photos[state.index], state.index)}
+              className="max-w-full rounded-xl object-contain"
+              style={{
+                maxHeight: PHOTO_CAPTIONS[photos[state.index]]
+                  ? "calc(100svh - 11rem)"
+                  : "calc(100svh - 7rem)",
+              }}
+            />
+            {PHOTO_CAPTIONS[photos[state.index]] && (
+              <div className="text-center">
+                <p className="text-lg font-bold text-white">
+                  {PHOTO_CAPTIONS[photos[state.index]].title}
+                </p>
+                {PHOTO_CAPTIONS[photos[state.index]].subtitle && (
+                  <p
+                    className="text-xs font-semibold uppercase tracking-widest"
+                    style={{ color: "#c4b5fd" }}
+                  >
+                    {PHOTO_CAPTIONS[photos[state.index]].subtitle}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
           {total > 1 && (
             <>
               <RoundButton
@@ -1075,10 +1138,29 @@ function ArtistPhotosSection() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={photoSrc(n)}
-                alt={`${group.alt}, foto ${i + 1}`}
+                alt={photoAlt(group, n, i)}
                 loading={i === 0 ? "eager" : "lazy"}
                 className="relative h-full w-full object-contain"
               />
+              {/* Nombre y grupo: aparece y desaparece junto con la foto */}
+              {PHOTO_CAPTIONS[n] && (
+                <div className="pointer-events-none absolute bottom-[4.75rem] left-4 z-[5] max-w-[70%] sm:bottom-20 sm:left-6">
+                  <p
+                    className="text-lg font-bold text-white sm:text-2xl"
+                    style={{ textShadow: CAPTION_SHADOW }}
+                  >
+                    {PHOTO_CAPTIONS[n].title}
+                  </p>
+                  {PHOTO_CAPTIONS[n].subtitle && (
+                    <p
+                      className="text-xs font-semibold uppercase tracking-widest sm:text-sm"
+                      style={{ color: "#c4b5fd", textShadow: CAPTION_SHADOW }}
+                    >
+                      {PHOTO_CAPTIONS[n].subtitle}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           ))}
 
