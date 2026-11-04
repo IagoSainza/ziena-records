@@ -8,7 +8,7 @@ export const site = {
   name: "Ziena Records",
   shortName: "Ziena",
   // Dominio público (sin "/" final). Lo usan layout.tsx, sitemap.ts y robots.ts.
-  url: "https://zienarecords.com",
+  url: "https://www.zienarecords.com",
   tagline: "Estudio de grabación y local de ensayo",
   description:
     "Estudio de grabación y local de ensayo en Ourense (Av. Portugal, 133, sótano). Equipamiento profesional y reserva directa por WhatsApp.",

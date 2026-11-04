@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { site } from "@/data/site";
 
-// Se sirve en https://zienarecords.com/sitemap.xml
+// Se sirve en https://www.zienarecords.com/sitemap.xml
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
