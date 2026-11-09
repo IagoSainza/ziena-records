@@ -811,12 +811,21 @@ type PhotoCaption = { title: string; subtitle?: string };
 
 const PHOTO_CAPTIONS: Record<number, PhotoCaption> = {
   1: { title: "Yosi", subtitle: "Cantante de Los Suaves" },
-  11: { title: "Marino Sáiz", subtitle: "Violinista de Andrés Suárez" },
+  2: { title: "Juankar", subtitle: "Boikot" },
+  3: { title: "Juankar", subtitle: "Boikot" },
+  5: { title: "Pepe", subtitle: "Lancelot" },
+  7: { title: "Fernando Calvo", subtitle: "Los Suaves" },
+  9: { title: "Fernando Matías" },
+  4: { title: "Javi Maneiro", subtitle: "Heredeiros da Cruz" },
+  6: { title: "Xoel López" },
+  8: { title: "El Langui" },
+  10: { title: "Javier Vargas" },
+  11: { title: "Marino Sáiz", subtitle: "Violinista" },
   12: { title: "Macaco", subtitle: "Cantante" },
   13: { title: "Evaristo Páramos", subtitle: "Cantante de La Polla Records y Gatillazo" },
   14: { title: "Mariskal Romero", subtitle: "Locutor de radio y rock" },
   15: { title: "El Pirata", subtitle: "Juan Pablo Ordúñez, locutor de radio y rock" },
-  16: { title: "Xaime Noguerol" },
+  16: { title: "Xaime Noguerol", subtitle: "Escritor" },
 };
 
 const photoAlt = (group: PhotoGroupData, n: number, i: number) => {
