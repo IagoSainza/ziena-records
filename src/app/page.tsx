@@ -796,7 +796,7 @@ type ModalState = { mode: "grid" | "photo"; index: number } | null;
 
 const PHOTO_GROUPS: PhotoGroupData[] = [
   { key: "artistas", label: "Artistas", alt: "Artista en Ziena Records", photos: [1, 2, 3, 5, 7, 9] },
-  { key: "experiencias", label: "Experiencias", alt: "Experiencia en Ziena Records", photos: [4, 6, 8, 10, 11, 12, 13, 14, 15, 16] },
+  { key: "experiencias", label: "Experiencias", alt: "Experiencia en Ziena Records", photos: [4, 6, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] },
 ];
 
 const photoSrc = (n: number) => `${ARTIST_PHOTOS_DIR}/${n}.jpg`;
@@ -826,6 +826,9 @@ const PHOTO_CAPTIONS: Record<number, PhotoCaption> = {
   14: { title: "Mariskal Romero", subtitle: "Locutor de radio y rock" },
   15: { title: "El Pirata", subtitle: "Juan Pablo Ordúñez, locutor de radio y rock" },
   16: { title: "Xaime Noguerol", subtitle: "Escritor" },
+  17: { title: "Txus Maraví", subtitle: "Guitarrista de El Drogas" },
+  18: { title: "El Flako", subtitle: "Eugenio Aristu, bajista de El Drogas" },
+  19: { title: "Brigi Duke", subtitle: "Batería de El Drogas y Koma" },
 };
 
 const photoAlt = (group: PhotoGroupData, n: number, i: number) => {
